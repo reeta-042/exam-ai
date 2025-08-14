@@ -4,6 +4,8 @@ from app.loaders import load_and_chunk_pdf
 from app.vectorbase import store_chunks, get_vectorstore, get_bm25_retriever
 from app.chain import build_llm_chain, retrieve_hybrid_docs, rerank_documents, format_quiz_card
 from app.streamlit import upload_pdfs
+#Loading my API KEY
+GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 
 # Set Streamlit page configuration
 st.set_page_config(page_title="📄 Chat with your PDF and prep for your exams", layout="wide")
