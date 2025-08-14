@@ -1,9 +1,9 @@
 import os
 import streamlit as st
 from app.loaders import load_and_chunk_pdf
-from app.vectorstore import store_chunks, get_vectorstore, get_bm25_retriever
+from app.vectorbase import store_chunks, get_vectorstore, get_bm25_retriever
 from app.chain import build_llm_chain, retrieve_hybrid_docs, rerank_documents, format_quiz_card
-from app.pdf_handler import upload_pdfs
+from app.streamlit import upload_pdfs
 
 # Set Streamlit page configuration
 st.set_page_config(page_title="📄 Chat with your PDF and prep for your exams", layout="wide")
@@ -91,7 +91,7 @@ if query:
             st.markdown(f"- {opt}")
         st.markdown(f"✅ **Correct Answer:** {q['answer']}")
         if q["explanation"]:
-            st.markdown(f"📚 **Why?** {q['explanation']}")
+            st.markdown(f"**Why?** {q['explanation']}")
         st.markdown("---")
 
     # STEP 9: Show retrieved chunks in the sidebar
