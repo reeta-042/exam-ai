@@ -48,7 +48,7 @@ def build_llm_chain():
 # LLM Setup
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
-        api_key=GOOGLE_API_KEY,
+        api_key=api_key,
         streaming=True
     )
 
