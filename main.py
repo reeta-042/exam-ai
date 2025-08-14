@@ -7,6 +7,10 @@ from app.streamlit import upload_pdfs
 #Loading my API KEY
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 
+#Pass the key into the chain builder
+chain = buildllmchain(api_key=GOOGLE_API_KEY)
+
+
 # Set Streamlit page configuration
 st.set_page_config(page_title="📄 Chat with your PDF and prep for your exams", layout="wide")
 st.title("💻ExamAI: Chat with your Course Material")
