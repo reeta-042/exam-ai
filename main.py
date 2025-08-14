@@ -8,7 +8,7 @@ from app.streamlit import upload_pdfs
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 
 #Pass the key into the chain builder
-chain = buildllmchain(api_key=GOOGLE_API_KEY)
+chain = build_llm_chain(api_key=GOOGLE_API_KEY)
 
 
 # Set Streamlit page configuration
