@@ -66,7 +66,7 @@ def build_llm_chain(api_key):
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         api_key=api_key,
-        streaming=True
+        model_kwargs={"streaming": True}
     )
 
     parser = StrOutputParser()
