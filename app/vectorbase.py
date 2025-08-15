@@ -3,7 +3,6 @@
 
 import os
 import pinecone
-from pinecone import Index
 #from langchain.vectorstores import Pinecone
 from langchain_pinecone import Pinecone as LangChainPinecone
 from langchain_community.document_loaders import PyPDFLoader
@@ -21,7 +20,7 @@ def store_chunks(chunks, api_key, env, index_name):
     """
     # Initialize Pinecone
     pinecone.init(api_key=api_key, environment=env)
-    index = Index(index_name = index_name)
+    index = pinecone.Index(index_name = index_name)
 
     # Embedding model
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
@@ -55,7 +54,7 @@ def get_vectorstore(api_key, env, index_name):
     Loads the existing Pinecone index.
     """
     pinecone.init(api_key= api_key, environment= env)
-    index = Index(index_name = index_name)
+    index = pinecone.Index(index_name = index_name)
 
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     vectorstore = LangChainPinecone(index, embedding_function=embeddings.embed_query, text_key="text")
