@@ -83,8 +83,8 @@ def build_llm_chain(api_key):
     # Answer Prompt
     answer_prompt = PromptTemplate.from_template("""
     You are a helpful undergraduate teaching AI assistant. Answer the question based only on the context below,make sure your answer is clear for an undergraduate to understand 
-    Break down words that will be difficult for assimilation into phrases that relay the answer properly,keep in mind the student is prepping for an exam
-    The entire output should be within 2500 words.
+    Break down words that will be difficult for assimilation into phrases that relay the answer properly,keep in mind the student is prepping for an exam.
+    
 
     Context:
     {context}
@@ -96,8 +96,8 @@ def build_llm_chain(api_key):
 
     # Follow-Up Prompt
     followup_prompt = PromptTemplate.from_template("""
-    You are a thoughtful AI tutor. Based on the context and the undergraduate question, provide relevant information in bullet points that will deepen their understanding and they can expect in exams,
-    Keep entire output within 1500 words.
+    You are a thoughtful AI tutor. Based on the context and the undergraduate question, provide relevant information in bullet points that will deepen their understanding and they can expect in exams.
+    
 
     Context:
     {context}
