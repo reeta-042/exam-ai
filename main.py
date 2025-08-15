@@ -53,6 +53,12 @@ else:
 st.subheader("....Ask away....🌚")
 query = st.text_input("What do you want to know?")
 
+#Setting up the containers 
+
+    answer_container = st.empty()
+    followup_container = st.empty()
+    quiz_container = st.empty()
+
 if query:
     # STEP 4: Retrieve documents (Hybrid search)
     with st.spinner("🔍 Searching your course material..."):
@@ -71,12 +77,10 @@ if query:
         "question": query
     }
 
+    
     # STEP 7: Invoke each chain sequentially
     st.markdown("### Detailed Answer with Follow-Up and Quiz ")
 
-    answer_container = st.empty()
-    followup_container = st.empty()
-    quiz_container = st.empty()
 
     with st.spinner("⌨️ Generating answer..."):
         answer = answer_chain.invoke(input_data)
