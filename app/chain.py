@@ -38,7 +38,7 @@ def rerank_documents(query, docs, top_k=4):
     return top_docs[:top_k]
 
 
-def parse_quiz(text):
+def format_quiz_card(text):
     # Split the quiz into individual questions
     question_blocks = re.split(r'\n(?=Question:)', text.strip())
     quiz_data = []
