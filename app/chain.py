@@ -1,6 +1,6 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
-#from langchain_core.runnables import RunnableParallel, RunnableMap, RunnableLambda
-#from langchain.schema.runnable import Runnable
+from langchain_core.runnables import  RunnableLambda
+from langchain.schema.runnable import Runnable
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
@@ -136,6 +136,7 @@ Quiz:
     # Chains
     answer_chain = answer_prompt | llm | parser
     followup_chain = followup_prompt | llm | parser
-    quiz_chain = quiz_prompt | llm | parser
+    quiz_chain = quiz_prompt | llm | parser | RunnableLambda(format_quiz_card)
+
 
     return answer_chain, followup_chain, quiz_chain
