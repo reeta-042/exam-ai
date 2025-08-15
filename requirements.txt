@@ -9,3 +9,4 @@ langchain-text-splitters
 rank_bm25
 langchain-huggingface
 langchain-chroma>=0.1.0
+langchain-pinecone
