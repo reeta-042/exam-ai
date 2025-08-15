@@ -20,7 +20,7 @@ def store_chunks(chunks, api_key, index_name):
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     # Wrap Pinecone with LangChain
-    vectorstore = LangChainPinecone(index, embedding_function=embeddings.embed_query, text_key="text")
+    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text")
 
     # Convert chunks to LangChain documents
     docs = [Document(page_content=chunk.page_content) for chunk in chunks]
@@ -49,6 +49,6 @@ def get_vectorstore(api_key, index_name):
     index = pc.Index(index_name)
 
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    vectorstore = LangChainPinecone(index, embedding_function=embeddings.embed_query, text_key="text")
+    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text")
 
     return vectorstore
