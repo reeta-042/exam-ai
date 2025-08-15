@@ -106,11 +106,4 @@ if query:
 else:
     st.info("Please enter a question to get started.")
 
-    # STEP 10: Show retrieved chunks in the sidebar
-    st.sidebar.subheader("🔍 Retrieved Chunks")
-    if reranked_docs:
-        for i, doc in enumerate(reranked_docs):
-            st.sidebar.markdown(f"**Chunk {i+1}**")
-            st.sidebar.caption(doc.page_content[:200])
-    else:
-        st.sidebar.info("No chunks retrieved yet.")
+    
