@@ -1,26 +1,20 @@
-#Importing necessary libraries from langchain
-#Vector storage and embeddings(step 3)
 
-import os
-import pinecone
-#from langchain.vectorstores import Pinecone
+
+from pinecone import Pinecone  # Official Pinecone SDK (v3+)
 from langchain_pinecone import Pinecone as LangChainPinecone
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.retrievers import BM25Retriever
+from langchain.docstore.document import Document
 
 
-
-
-def store_chunks(chunks, api_key, env, index_name):
+def store_chunks(chunks, api_key, index_name):
     """
     Stores the given chunks in Pinecone with HuggingFace embeddings.
     Returns the vectorstore instance.
     """
-    # Initialize Pinecone
-    pinecone.init(api_key=api_key, environment=env)
-    index = pinecone.Index(index_name = index_name)
+    # Create Pinecone client
+    pc = Pinecone(api_key=api_key)
+    index = pc.Index(index_name)
 
     # Embedding model
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
@@ -29,7 +23,6 @@ def store_chunks(chunks, api_key, env, index_name):
     vectorstore = LangChainPinecone(index, embedding_function=embeddings.embed_query, text_key="text")
 
     # Convert chunks to LangChain documents
-    from langchain.docstore.document import Document
     docs = [Document(page_content=chunk.page_content) for chunk in chunks]
 
     # Add documents to Pinecone
@@ -43,18 +36,17 @@ def get_bm25_retriever(chunks):
     Initializes and returns a BM25Retriever from text chunks.
     Useful for keyword-based retrieval in hybrid search.
     """
-
     bm25 = BM25Retriever.from_documents(chunks)
     bm25.k = 5
     return bm25
 
 
-def get_vectorstore(api_key, env, index_name):
+def get_vectorstore(api_key, index_name):
     """
     Loads the existing Pinecone index.
     """
-    pinecone.init(api_key= api_key, environment= env)
-    index = pinecone.Index(index_name = index_name)
+    pc = Pinecone(api_key=api_key)
+    index = pc.Index(index_name)
 
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     vectorstore = LangChainPinecone(index, embedding_function=embeddings.embed_query, text_key="text")
