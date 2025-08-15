@@ -55,61 +55,61 @@ query = st.text_input("What do you want to know?")
 
 if query:
     # STEP 4: Retrieve documents (Hybrid search)
-    retrieved_docs = retrieve_hybrid_docs(query, vectorstore)
+    with st.spinner("🔍 Searching your course material..."):
+        retrieved_docs = retrieve_hybrid_docs(query, vectorstore)
 
     # STEP 5: Apply reranker
-    reranked_docs = rerank_documents(query, retrieved_docs)
+    with st.spinner("📚 Reranking the most relevant chunks..."):
+        reranked_docs = rerank_documents(query, retrieved_docs)
 
     # STEP 6: Build the chain
-    stream_answer, stream_followup, stream_quiz = build_llm_chain(api_key = "GOOGLE_API_KEY")
+    stream_answer, stream_followup, stream_quiz = build_llm_chain(api_key=GOOGLE_API_KEY)
+
+    # Prepare input for chains
+    input_data = {
+        "context": "\n\n".join([doc.page_content for doc in reranked_docs]),
+        "question": query
+    }
 
     # STEP 7: Stream response into Streamlit
-st.markdown("### Detailed Answer with Follow-Up and Quiz ")
+    st.markdown("### Detailed Answer with Follow-Up and Quiz ")
 
-# Create containers for each section
-answer_container = st.empty()
-followup_container = st.empty()
-quiz_container = st.empty()
+    answer_container = st.empty()
+    followup_container = st.empty()
+    quiz_container = st.empty()
 
-# Prepare input for chains
-input_data = {
-    "context": "\n\n".join([doc.page_content for doc in reranked_docs]),
-    "question": query
-}
+    with st.spinner("⌨️ Generating answer..."):
+        for chunk in stream_answer(input_data):
+            answer_container.markdown(chunk)
 
-# Stream each part of the response
-with st.spinner("⌨️Generating answer..."):
-    for chunk in stream_answer(input_data):
-        answer_container.markdown(chunk)
+    with st.spinner("👀 Generating follow-up questions..."):
+        for chunk in stream_followup(input_data):
+            followup_container.markdown(chunk)
 
-with st.spinner("👀Generating follow-up questions..."):
-    for chunk in stream_followup(input_data):
-        followup_container.markdown(chunk)
+    quiz_text = ""
+    with st.spinner("🚶 Generating quiz..."):
+        for chunk in stream_quiz(input_data):
+            quiz_text += chunk
+            quiz_container.markdown(chunk)
 
-quiz_text = ""
-with st.spinner("🚶Generating quiz..."):
-    for chunk in stream_quiz(input_data):
-        quiz_text += chunk
-        quiz_container.markdown(chunk)
+    # STEP 8: Format and display quiz as a learning tool
+    st.markdown("### 📘 Learn Through Quiz")
+    quiz_card = format_quiz_card(quiz_text)
 
-# STEP 8: Format and display quiz as a learning tool
-st.markdown("### 📘 Learn Through Quiz")
-quiz_card = format_quiz_card(quiz_text)
+    for i, q in enumerate(quiz_card):
+        st.markdown(f"**Q{i+1}: {q['question']}**")
+        for opt in q["options"]:
+            st.markdown(f"- {opt}")
+        st.markdown(f"✅ **Correct Answer:** {q['answer']}")
+        if q["explanation"]:
+            st.markdown(f"**Why?** {q['explanation']}")
+        st.markdown("---")
 
-for i, q in enumerate(quiz_card):
-    st.markdown(f"**Q{i+1}: {q['question']}**")
-    for opt in q["options"]:
-        st.markdown(f"- {opt}")
-    st.markdown(f"✅ **Correct Answer:** {q['answer']}")
-    if q["explanation"]:
-        st.markdown(f"**Why?** {q['explanation']}")
-    st.markdown("---")
-
-# STEP 9: Show retrieved chunks in the sidebar
-st.sidebar.subheader("🔍 Retrieved Chunks")
-if reranked_docs:
-    for i, doc in enumerate(reranked_docs):
-        st.sidebar.markdown(f"**Chunk {i+1}**")
-        st.sidebar.caption(doc.page_content[:400])
-else:
-    st.sidebar.info("No chunks retrieved yet.")
+    # STEP 9: Show retrieved chunks in the sidebar
+    st.sidebar.subheader("🔍 Retrieved Chunks")
+    if reranked_docs:
+        for i, doc in enumerate(reranked_docs):
+            st.sidebar.markdown(f"**Chunk {i+1}**")
+            st.sidebar.caption(doc.page_content[:400])
+    else:
+        st.sidebar.info("No chunks retrieved yet.")
