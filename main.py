@@ -53,11 +53,10 @@ else:
 st.subheader("....Ask away....🌚")
 query = st.text_input("What do you want to know?")
 
-#Setting up the containers 
-
-    answer_container = st.empty()
-    followup_container = st.empty()
-    quiz_container = st.empty()
+# Setting up the containers
+answer_container = st.empty()
+followup_container = st.empty()
+quiz_container = st.empty()
 
 if query:
     # STEP 4: Retrieve documents (Hybrid search)
