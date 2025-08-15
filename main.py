@@ -94,7 +94,7 @@ if query:
     st.markdown("### 📘 Learn Through Quiz")
     quiz_card = format_quiz_card(quiz)
 
-    for i, q in enumerate(quiz_card):
+    for i, q in enumerate(quiz):
         st.markdown(f"**Q{i+1}: {q['question']}**")
         for label, opt in q["options"].items():
             st.markdown(f"- **{label}.** {opt}")
