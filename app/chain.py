@@ -6,6 +6,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain.retrievers.document_compressors import CrossEncoderReranker
 from app.config import GOOGLE_API_KEY
+import re
 
 
 def retrieve_hybrid_docs(query, vectorstore, top_k=5):
@@ -36,7 +37,6 @@ def rerank_documents(query, docs, top_k=4):
     # Return top K documents
     return top_docs[:top_k]
 
-import re
 
 def parse_quiz(text):
     # Split the quiz into individual questions
