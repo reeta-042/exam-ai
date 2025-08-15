@@ -63,51 +63,51 @@ if query:
         reranked_docs = rerank_documents(query, retrieved_docs)
 
     # STEP 6: Build the chain
-answer_chain, followup_chain, quiz_chain = build_llm_chain(api_key=GOOGLE_API_KEY)
+    answer_chain, followup_chain, quiz_chain = build_llm_chain(api_key=GOOGLE_API_KEY)
 
-# Prepare input for chains
-input_data = {
-    "context": "\n\n".join([doc.page_content for doc in reranked_docs]),
-    "question": query
-}
+    # Prepare input for chains
+    input_data = {
+        "context": "\n\n".join([doc.page_content for doc in reranked_docs]),
+        "question": query
+    }
 
-# STEP 7: Invoke each chain sequentially
-st.markdown("### Detailed Answer with Follow-Up and Quiz ")
+    # STEP 7: Invoke each chain sequentially
+    st.markdown("### Detailed Answer with Follow-Up and Quiz ")
 
-answer_container = st.empty()
-followup_container = st.empty()
-quiz_container = st.empty()
+    answer_container = st.empty()
+    followup_container = st.empty()
+    quiz_container = st.empty()
 
-with st.spinner("⌨️ Generating answer..."):
-    answer = answer_chain.invoke(input_data)
-    answer_container.markdown(answer)
+    with st.spinner("⌨️ Generating answer..."):
+        answer = answer_chain.invoke(input_data)
+        answer_container.markdown(answer)
 
-with st.spinner("👀 Generating follow-up questions..."):
-    followup = followup_chain.invoke(input_data)
-    followup_container.markdown(followup)
+    with st.spinner("👀 Generating follow-up questions..."):
+        followup = followup_chain.invoke(input_data)
+        followup_container.markdown(followup)
 
-with st.spinner("🚶 Generating quiz..."):
-    quiz = quiz_chain.invoke(input_data)
-    quiz_container.markdown(quiz)
+    with st.spinner("🚶 Generating quiz..."):
+        quiz = quiz_chain.invoke(input_data)
+        quiz_container.markdown(quiz)
 
-# STEP 8: Format and display quiz as a learning tool
-st.markdown("### 📘 Learn Through Quiz")
-quiz_card = format_quiz_card(quiz)  # now using the updated parser
+    # STEP 8: Format and display quiz as a learning tool
+    st.markdown("### 📘 Learn Through Quiz")
+    quiz_card = format_quiz_card(quiz)
 
-for i, q in enumerate(quiz_card):
-    st.markdown(f"**Q{i+1}: {q['question']}**")
-    for label, opt in q["options"].items():
-        st.markdown(f"- **{label}.** {opt}")
-    st.markdown(f"✅ **Correct Answer:** {q['answer']}")
-    if q["explanation"]:
-        st.markdown(f"**Why?** {q['explanation']}")
-    st.markdown("---")
+    for i, q in enumerate(quiz_card):
+        st.markdown(f"**Q{i+1}: {q['question']}**")
+        for label, opt in q["options"].items():
+            st.markdown(f"- **{label}.** {opt}")
+        st.markdown(f"✅ **Correct Answer:** {q['answer']}")
+        if q["explanation"]:
+            st.markdown(f"**Why?** {q['explanation']}")
+        st.markdown("---")
 
-# STEP 9: Show retrieved chunks in the sidebar
-st.sidebar.subheader("🔍 Retrieved Chunks")
-if reranked_docs:
-    for i, doc in enumerate(reranked_docs):
-        st.sidebar.markdown(f"**Chunk {i+1}**")
-        st.sidebar.caption(doc.page_content[:200])
-else:
-    st.sidebar.info("No chunks retrieved yet.")
+    # STEP 9: Show retrieved chunks in the sidebar
+    st.sidebar.subheader("🔍 Retrieved Chunks")
+    if reranked_docs:
+        for i, doc in enumerate(reranked_docs):
+            st.sidebar.markdown(f"**Chunk {i+1}**")
+            st.sidebar.caption(doc.page_content[:200])
+    else:
+        st.sidebar.info("No chunks retrieved yet.")
