@@ -112,4 +112,4 @@ def build_llm_chain(api_key):
     followup_chain = followup_prompt | llm | parser
     quiz_chain = quiz_prompt | llm | parser
 
-    return answerchain.stream, followupchain.stream, quiz_chain.stream
+    return answer_chain.stream, followup_chain.stream, quiz_chain.stream
