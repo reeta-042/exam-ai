@@ -50,7 +50,7 @@ else:
         st.warning("⚠️ Please upload a PDF first.")
         st.stop()
 # STEP 3: User asks a question
-st.subheader("....Ask away....")
+st.subheader("....Ask away....🌚")
 query = st.text_input("What do you want to know?")
 
 if query:
