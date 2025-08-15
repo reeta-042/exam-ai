@@ -43,10 +43,8 @@ if pdf_file and submitted:
 else:
     try:
         # Fallback to existing vectorstore on app restart
-        else:
-    try:
         chunks = []  
-        vectorstore = get_vectorstore(
+         vectorstore = get_vectorstore(
             api_key=PINECONE_API_KEY,
             env=PINECONE_ENV,
             index_name=PINECONE_INDEX_NAME
