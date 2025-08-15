@@ -36,24 +36,33 @@ def rerank_documents(query, docs, top_k=4):
     # Return top K documents
     return top_docs[:top_k]
 
+import re
 
-def format_quiz_card(raw_quiz_text):
-    questions = raw_quiz_text.strip().split("\n\n")
-    quiz_card = []
-    for q in questions:
-        lines = q.strip().split("\n")
-        if len(lines) >= 5:
-            question_text = lines[0]
-            options = lines[1:5]
-            answer_line = next((line for line in lines if "Answer:" in line), None)
-            explanation_line = next((line for line in lines if "Explanation:" in line), None)
-            quiz_card.append({
-                "question": question_text,
-                "options": options,
-                "answer": answer_line.replace("Answer:", "").strip() if answer_line else "Not found",
-                "explanation": explanation_line.replace("Explanation:", "").strip() if explanation_line else ""
+def parse_quiz(text):
+    # Split the quiz into individual questions
+    question_blocks = re.split(r'\n(?=Question:)', text.strip())
+    quiz_data = []
+
+    for block in question_blocks:
+        question_match = re.search(r'Question:\s*(.*)', block)
+        options = {
+            'A': re.search(r'A\.\s*(.*)', block),
+            'B': re.search(r'B\.\s*(.*)', block),
+            'C': re.search(r'C\.\s*(.*)', block),
+            'D': re.search(r'D\.\s*(.*)', block),
+        }
+        answer_match = re.search(r'Answer:\s*([A-D])', block)
+        explanation_match = re.search(r'Explanation:\s*(.*)', block)
+
+        if question_match and answer_match and explanation_match:
+            quiz_data.append({
+                'question': question_match.group(1).strip(),
+                'options': {key: opt.group(1).strip() if opt else None for key, opt in options.items()},
+                'answer': answer_match.group(1).strip(),
+                'explanation': explanation_match.group(1).strip()
             })
-    return quiz_card
+
+    return quiz_data
 
 
 def build_llm_chain(api_key):
@@ -97,16 +106,30 @@ def build_llm_chain(api_key):
 
     # Quiz Prompt
     quiz_prompt = PromptTemplate.from_template("""
-    You are an AI tutor helping students prepare for exams. Based on the context and the original question, generate a quiz with 5 multiple-choice questions. Each question should have four options (A–D) and clearly indicate the correct answer, also provide a short explanation for each correct answer, the questions should range from beginner to advanced and the explanation should be simple for an undergraduate to understand.
+You are an AI tutor helping students prepare for exams. Based on the context and the original question, generate a quiz with 5 multiple-choice questions.
 
-    Context:
-    {context}
+Each question must follow this exact format:
+- Question: [Your question here]
+- A. [Option A]
+- B. [Option B]
+- C. [Option C]
+- D. [Option D]
+- Answer: [Correct option letter, e.g., C]
+- Explanation: [Short explanation for why this is the correct answer]
 
-    Original Question:
-    {question}
+Guidelines:
+- Ensure the correct answer is clearly labeled with "Answer:" and the explanation starts with "Explanation:"
+- Questions should range from beginner to advanced.
+- Keep explanations simple and easy to understand for undergraduate students.
 
-    Quiz:""")
+Context:
+{context}
 
+Original Question:
+{question}
+
+Quiz:
+""")
     # Chains
     answer_chain = answer_prompt | llm | parser
     followup_chain = followup_prompt | llm | parser
