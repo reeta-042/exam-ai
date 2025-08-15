@@ -18,7 +18,7 @@ vectorstore = store_chunks(
     index_name=PINECONE_INDEX_NAME
 )
 
-retriever = get_vectorstore(
+vectorstore = get_vectorstore(
     query,
     api_key=PINECONE_API_KEY,
     env=PINECONE_ENV,
