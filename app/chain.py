@@ -124,6 +124,7 @@ Guidelines:
 - Ensure the correct answer is clearly labeled with "Answer:" and the explanation starts with "Explanation:"
 - Questions should range from beginner to advanced.
 - Keep explanations simple and easy to understand for undergraduate students.
+- Ensure each part is on a new line. Use clear spacing between the letter and the option text. Do not merge lines. Keep the output clean and easy to parse.
 
 Context:
 {context}
