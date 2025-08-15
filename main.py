@@ -11,6 +11,19 @@ PINECONE_ENV = st.secrets["PINECONE_ENV"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
 #Pass the keys into the chain builder
 chain = build_llm_chain(api_key=GOOGLE_API_KEY)
+vectorstore = store_chunks(
+    chunks,
+    api_key=PINECONE_API_KEY,
+    env=PINECONE_ENV,
+    index_name=PINECONE_INDEX_NAME
+)
+
+retriever = get_vectorstore(
+    query,
+    api_key=PINECONE_API_KEY,
+    env=PINECONE_ENV,
+    index_name=PINECONE_INDEX_NAME
+)
 
 
 
