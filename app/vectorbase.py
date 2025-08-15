@@ -2,35 +2,37 @@
 #Vector storage and embeddings(step 3)
 
 import os
-from langchain_chroma import Chroma
+import pinecone
+from langchain.vectorstores import Pinecone
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.retrievers import BM25Retriever
 
 
-# Persistent directory for Chroma vectorstore
-PERSIST_DIR = "./chroma_store"
 
-def store_chunks(chunks):
+
+def store_chunks(chunks, api_key, env, index_name):
     """
-    Stores the given chunks in ChromaDB with HuggingFace embeddings.
+    Stores the given chunks in Pinecone with HuggingFace embeddings.
     Returns the vectorstore instance.
     """
+    # Initialize Pinecone
+    pc = Pinecone(api_key=pinecone_key, environment=env)
+    index = pc.Index(index_name)
+
+    # Embedding model
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    # If the vectorstore already exists, append to it
-    if os.path.exists(PERSIST_DIR) and os.listdir(PERSIST_DIR):
-        vectorstore = Chroma(persist_directory=PERSIST_DIR, embedding_function=embeddings)
-        vectorstore.add_documents(chunks)
-        vectorstore.persist()
-    else:
-        vectorstore = Chroma.from_documents(
-            documents=chunks,
-            embedding=embeddings,
-            persist_directory=PERSIST_DIR
-        )
-        vectorstore.persist()
+    # Wrap Pinecone with LangChain
+    vectorstore = Pinecone(index, embedding_function=embeddings.embed_query, text_key="text")
+
+    # Convert chunks to LangChain documents
+    from langchain.docstore.document import Document
+    docs = [Document(page_content=chunk.page_content) for chunk in chunks]
+
+    # Add documents to Pinecone
+    vectorstore.add_documents(docs)
 
     return vectorstore
 
@@ -46,12 +48,14 @@ def get_bm25_retriever(chunks):
     return bm25
 
 
-def get_vectorstore():
+def get_vectorstore(api_key, env, index_name):
     """
-    Loads the existing Chroma vectorstore without reprocessing PDFs.
+    Loads the existing Pinecone index.
     """
+    pc = Pinecone(api_key=pinecone_key, environment=env)
+    index = pc.Index(index_name)
+
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    return Chroma(
-        persist_directory=PERSIST_DIR,
-        embedding_function=embeddings
-    )
+    vectorstore = Pinecone(index, embedding_function=embeddings.embed_query, text_key="text")
+
+    return vectorstore
