@@ -92,12 +92,12 @@ with st.spinner("🚶 Generating quiz..."):
 
 # STEP 8: Format and display quiz as a learning tool
 st.markdown("### 📘 Learn Through Quiz")
-quiz_card = format_quiz_card(quiz)
+quiz_card = format_quiz_card(quiz)  # now using the updated parser
 
 for i, q in enumerate(quiz_card):
     st.markdown(f"**Q{i+1}: {q['question']}**")
-    for opt in q["options"]:
-        st.markdown(f"- {opt}")
+    for label, opt in q["options"].items():
+        st.markdown(f"- **{label}.** {opt}")
     st.markdown(f"✅ **Correct Answer:** {q['answer']}")
     if q["explanation"]:
         st.markdown(f"**Why?** {q['explanation']}")
