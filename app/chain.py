@@ -1,6 +1,6 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.runnables import RunnableParallel, RunnableMap, RunnableLambda
-from langchain.schema.runnable import Runnable
+#from langchain_core.runnables import RunnableParallel, RunnableMap, RunnableLambda
+#from langchain.schema.runnable import Runnable
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
@@ -112,17 +112,4 @@ def build_llm_chain(api_key):
     followup_chain = followup_prompt | llm | parser
     quiz_chain = quiz_prompt | llm | parser
 
-    # Parallel Chain: Inject context + question → run all chains
-    parallel_chain = (
-        RunnableMap({
-            "context": lambda x: "\n\n".join([doc.page_content for doc in x["docs"]]),
-            "question": lambda x: x["question"]
-        })
-        | RunnableParallel({
-            "answer": answer_chain,
-            "followup": followup_chain,
-            "quiz": quiz_chain
-        })
-    )
-
-    return parallel_chain
+    return answerchain.stream, followupchain.stream, quiz_chain.stream
