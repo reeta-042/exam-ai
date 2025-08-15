@@ -9,22 +9,6 @@ GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
 PINECONE_ENV = st.secrets["PINECONE_ENV"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
-#Pass the keys into the chain builder
-chain = build_llm_chain(api_key=GOOGLE_API_KEY)
-vectorstore = store_chunks(
-    chunks,
-    api_key=PINECONE_API_KEY,
-    env=PINECONE_ENV,
-    index_name=PINECONE_INDEX_NAME
-)
-
-vectorstore = get_vectorstore(
-    api_key=PINECONE_API_KEY,
-    env=PINECONE_ENV,
-    index_name=PINECONE_INDEX_NAME
-)
-
-
 
 # Set Streamlit page configuration
 st.set_page_config(page_title="📄 Chat with your PDF and prep for your exams", layout="wide")
@@ -44,19 +28,29 @@ if pdf_file and submitted:
 
     st.sidebar.success(f"Uploaded: {pdf_file.name}")
 
-    # Load, split, and embed PDF into chunks
     with st.spinner("... Loading👀..."):
         chunks = load_and_chunk_pdf(file_path)
         st.success("✅ Course material loaded successfully!")
 
-        # Store in vectorstore
-        vectorstore = store_chunks(chunks)
+        vectorstore = store_chunks(
+            chunks,
+            api_key=PINECONE_API_KEY,
+            env=PINECONE_ENV,
+            index_name=PINECONE_INDEX_NAME
+        )
+
         bm25 = get_bm25_retriever(chunks)
 else:
     try:
         # Fallback to existing vectorstore on app restart
-        chunks = []
-        vectorstore = get_vectorstore()
+        else:
+    try:
+        chunks = []  
+        vectorstore = get_vectorstore(
+            api_key=PINECONE_API_KEY,
+            env=PINECONE_ENV,
+            index_name=PINECONE_INDEX_NAME
+        )
     except:
         st.warning("⚠️ Please upload a PDF first.")
         st.stop()
@@ -73,7 +67,7 @@ if query:
     reranked_docs = rerank_documents(query, retrieved_docs)
 
     # STEP 6: Build the chain
-    chain = build_llm_chain()
+    chain = build_llm_chain(api_key = "GOOGLE_API_KEY")
 
     # STEP 7: Stream response into Streamlit
     st.subheader("Detailed Answer with Follow-Up and Quiz 😌")
