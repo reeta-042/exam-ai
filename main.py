@@ -42,9 +42,8 @@ if pdf_file and submitted:
         bm25 = get_bm25_retriever(chunks)
 else:
     try:
-        # Fallback to existing vectorstore on app restart
-        chunks = []  
-         vectorstore = get_vectorstore(
+        chunks = []  # placeholder
+        vectorstore = get_vectorstore(
             api_key=PINECONE_API_KEY,
             env=PINECONE_ENV,
             index_name=PINECONE_INDEX_NAME
@@ -52,7 +51,6 @@ else:
     except:
         st.warning("⚠️ Please upload a PDF first.")
         st.stop()
-
 # STEP 3: User asks a question
 st.header("Ask away....🌚")
 query = st.text_input("What do you want to know?")
