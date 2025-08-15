@@ -4,11 +4,14 @@ from app.loaders import load_and_chunk_pdf
 from app.vectorbase import store_chunks, get_vectorstore, get_bm25_retriever
 from app.chain import build_llm_chain, retrieve_hybrid_docs, rerank_documents, format_quiz_card
 from app.streamlit import upload_pdfs
-#Loading my API KEY
+#Loading my API KEYS
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
-
-#Pass the key into the chain builder
+PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
+PINECONE_ENV = st.secrets["PINECONE_ENV"]
+PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
+#Pass the keys into the chain builder
 chain = build_llm_chain(api_key=GOOGLE_API_KEY)
+
 
 
 # Set Streamlit page configuration
