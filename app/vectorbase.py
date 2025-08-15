@@ -18,7 +18,7 @@ def store_chunks(chunks, api_key, env, index_name):
     Returns the vectorstore instance.
     """
     # Initialize Pinecone
-    pc = Pinecone(api_key=pinecone_key, environment=env)
+    pc = Pinecone(api_key=api_key, environment=env)
     index = pc.Index(index_name = index_name)
 
     # Embedding model
@@ -52,7 +52,7 @@ def get_vectorstore(api_key, env, index_name):
     """
     Loads the existing Pinecone index.
     """
-    pc = Pinecone(api_key= pinecone_key, environment= env)
+    pc = Pinecone(api_key= api_key, environment= env)
     index = pc.Index(index_name = index_name)
 
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
