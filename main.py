@@ -7,7 +7,7 @@ from app.streamlit import upload_pdfs
 #Loading my API KEYS
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
-PINECONE_ENV = st.secrets["PINECONE_ENV"]
+#PINECONE_ENV = st.secrets["PINECONE_ENV"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
 
 # Set Streamlit page configuration
@@ -35,7 +35,6 @@ if pdf_file and submitted:
         vectorstore = store_chunks(
             chunks,
             api_key=PINECONE_API_KEY,
-            env=PINECONE_ENV,
             index_name=PINECONE_INDEX_NAME
         )
 
@@ -45,7 +44,6 @@ else:
         chunks = []  # placeholder
         vectorstore = get_vectorstore(
             api_key=PINECONE_API_KEY,
-            env=PINECONE_ENV,
             index_name=PINECONE_INDEX_NAME
         )
     except:
