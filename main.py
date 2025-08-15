@@ -87,7 +87,7 @@ if query:
         followup_container.markdown(followup)
 
     with st.spinner("🚶 Generating quiz..."):
-    quiz_card = quiz_chain.invoke(input_data)  # Already parsed via RunnableLambda
+         quiz_card = quiz_chain.invoke(input_data)  # Already parsed via RunnableLambda
 
 # STEP 8: Format and display quiz as a learning tool
 with quiz_container:
