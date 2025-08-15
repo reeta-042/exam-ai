@@ -58,16 +58,18 @@ answer_container = st.empty()
 followup_container = st.empty()
 quiz_container = st.empty()
 
+
+# STEP 5–8: Run chains and render output
 if query:
-    # STEP 4: Retrieve documents (Hybrid search)
+    # STEP 5: Retrieve documents (Hybrid search)
     with st.spinner("🔍 Searching your course material..."):
         retrieved_docs = retrieve_hybrid_docs(query, vectorstore)
 
-    # STEP 5: Apply reranker
+    # STEP 6: Apply reranker
     with st.spinner("📚 Reranking the most relevant chunks..."):
         reranked_docs = rerank_documents(query, retrieved_docs)
 
-    # STEP 6: Build the chain
+    # STEP 7: Build the chain
     answer_chain, followup_chain, quiz_chain = build_llm_chain(api_key=GOOGLE_API_KEY)
 
     # Prepare input for chains
@@ -76,10 +78,8 @@ if query:
         "question": query
     }
 
-    
-    # STEP 7: Invoke each chain sequentially
+    # STEP 8: Invoke each chain sequentially
     st.markdown("### Detailed Answer with Follow-Up and Quiz ")
-
 
     with st.spinner("⌨️ Generating answer..."):
         answer = answer_chain.invoke(input_data)
@@ -90,21 +90,23 @@ if query:
         followup_container.markdown(followup)
 
     with st.spinner("🚶 Generating quiz..."):
-         quiz_card = quiz_chain.invoke(input_data)  # Already parsed via RunnableLambda
+        quiz_card = quiz_chain.invoke(input_data)  # Already parsed via RunnableLambda
 
-# STEP 8: Format and display quiz as a learning tool
-with quiz_container:
-    st.markdown("### 📘 Learn Through Quiz")
-    for i, q in enumerate(quiz_card):
-        st.markdown(f"**Q{i+1}: {q['question']}**")
-        for label, opt in q["options"].items():
-            st.markdown(f"- **{label}.** {opt}")
-        st.markdown(f"✅ **Correct Answer:** {q['answer']}")
-        if q["explanation"]:
-            st.markdown(f"**Why?** {q['explanation']}")
-        st.markdown("---")
+    # STEP 9: Format and display quiz as a learning tool
+    with quiz_container:
+        st.markdown("### 📘 Learn Through Quiz")
+        for i, q in enumerate(quiz_card):
+            st.markdown(f"**Q{i+1}: {q['question']}**")
+            for label, opt in q["options"].items():
+                st.markdown(f"- **{label}.**&nbsp;&nbsp;{opt}", unsafe_allow_html=True)
+            st.markdown(f"✅ **Correct Answer:** {q['answer']}")
+            if q["explanation"]:
+                st.markdown(f"**Why?** {q['explanation']}")
+            st.markdown("---")
+else:
+    st.info("Please enter a question to get started.")
 
-    # STEP 9: Show retrieved chunks in the sidebar
+    # STEP 10: Show retrieved chunks in the sidebar
     st.sidebar.subheader("🔍 Retrieved Chunks")
     if reranked_docs:
         for i, doc in enumerate(reranked_docs):
