@@ -88,7 +88,7 @@ if query:
 
     with st.spinner("🚶 Generating quiz..."):
         quiz = quiz_chain.invoke(input_data)
-        quiz_container.markdown(quiz)
+        #quiz_container.markdown(quiz)
 
     # STEP 8: Format and display quiz as a learning tool
     st.markdown("### 📘 Learn Through Quiz")
