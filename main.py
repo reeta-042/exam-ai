@@ -107,7 +107,7 @@ if query:
 
     with st.spinner("🕵️‍♂️ Searching your documents..."):
         # Pass both the vectorstore and the bm25_retriever for a true hybrid search
-        retrieved_docs = retrieve_hybrid_docs(query, vectorstore, bm25_retriever)
+        retrieved_docs = retrieve_hybrid_docs(query, vectorstore, bm25_retriever,top_k = 15)
 
     # --- DEBUG CODE TO DISPLAY RESULTS ---
     with st.expander("🔍 Click to see retrieved document chunks"):
@@ -124,7 +124,7 @@ if query:
         st.error("I couldn't find any relevant information in the documents to answer this. Please try another question.")
     else:
         with st.spinner("📚 Reranking results for relevance..."):
-            reranked_docs = rerank_documents(query, retrieved_docs)
+            reranked_docs = rerank_documents(query, retrieved_docs,top_k = 5)
 
         # Safety net: fallback if reranked_docs is empty (reranker failed)
         if not reranked_docs:
