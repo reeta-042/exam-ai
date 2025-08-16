@@ -22,23 +22,21 @@ UPLOAD_DIR = "uploaded_files"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-
 # STEP 1: Upload PDFs
-
 uploaded_files, submitted = upload_pdfs()
+
 
 @cache_data(show_spinner=False)
 def cached_chunk_pdf(file_path: str):
     return load_and_chunk_pdf(file_path)
+
 
 @cache_resource
 def cached_get_vectorstore(api_key, index_name, namespace):
     return get_vectorstore(api_key, index_name, namespace)
 
 
-
 # STEP 2: Store / Load Vectorstore
-
 if submitted and uploaded_files:
     # Create a fresh namespace for this upload
     namespace = f"session_{uuid.uuid4().hex}"
@@ -51,7 +49,7 @@ if submitted and uploaded_files:
         chunks = cached_chunk_pdf(path)
         all_chunks.extend(chunks)
 
-    with st.spinner("... Loading👀..."):
+    with st.spinner("📥 Ingesting and indexing your PDFs..."):
         vectorstore = store_chunks(
             all_chunks,
             api_key=PINECONE_API_KEY,
@@ -76,21 +74,15 @@ else:
         st.stop()
 
 
-
 # STEP 3: User Query
-
 st.subheader("...Ask Away...")
 query = st.text_input("What do you want to know?")
 
 
-
 # STEP 4: Containers
-
 answer_container = st.empty()
 followup_container = st.empty()
 quiz_container = st.empty()
-
-#st.markdown("#### Detailed Answer with Follow-Up and Quiz")
 
 
 # STEP 5: Processing Query
@@ -102,12 +94,19 @@ if query:
     with st.spinner("📚 Reranking..."):
         reranked_docs = rerank_documents(query, retrieved_docs)
 
+    # ✅ Safety net: fallback if reranked_docs is empty
+    if not reranked_docs and retrieved_docs:
+        reranked_docs = retrieved_docs
+
     answer_chain, followup_chain, quiz_chain = build_llm_chain(api_key=GOOGLE_API_KEY)
 
     input_data = {
         "context": "\n\n".join([doc.page_content for doc in reranked_docs]),
         "question": query
     }
+
+    # ✅ Only show heading after query
+    st.markdown("#### Detailed Answer with Follow-Up and Quiz")
 
     with st.spinner("⌨️ Generating answer..."):
         answer = answer_chain.invoke(input_data)
@@ -117,12 +116,10 @@ if query:
         followup = followup_chain.invoke(input_data)
         followup_container.markdown(followup)
 
-    with st.spinner("🚶 Generating quiz..."):
+    with st.spinner("📝 Generating quiz..."):
         quiz_card = quiz_chain.invoke(input_data)
 
-    
     # STEP 6: Render Quiz
-    
     if quiz_card:
         quiz_box = quiz_container.container()
         with quiz_box:
@@ -137,4 +134,4 @@ if query:
                     st.markdown(f"💡 *Why?* {q['explanation']}")
                 st.markdown("---")
     else:
-        st.warning("Quiz could not be generated. Please check your prompt or context.")
+        st.warning("⚠️ Quiz could not be generated. Please check your prompt or context.")
