@@ -7,7 +7,7 @@ from langchain_community.retrievers import BM25Retriever
 from langchain.docstore.document import Document
 
 
-def store_chunks(chunks, api_key, index_name):
+def store_chunks(chunks, api_key, index_name, namespace: str = ""):
     """
     Stores the given chunks in Pinecone with HuggingFace embeddings.
     Returns the vectorstore instance.
@@ -20,13 +20,13 @@ def store_chunks(chunks, api_key, index_name):
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     # Wrap Pinecone with LangChain
-    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text")
+    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text",namespace = namespace)
 
     # Convert chunks to LangChain documents
     docs = [Document(page_content=chunk.page_content) for chunk in chunks]
 
     # Add documents to Pinecone
-    vectorstore.add_documents(docs)
+    vectorstore.add_documents(docs,namespace = namespace)
 
     return vectorstore
 
@@ -41,7 +41,7 @@ def get_bm25_retriever(chunks):
     return bm25
 
 
-def get_vectorstore(api_key, index_name):
+def get_vectorstore(api_key, index_name,namespace : str = ""):
     """
     Loads the existing Pinecone index.
     """
@@ -49,6 +49,6 @@ def get_vectorstore(api_key, index_name):
     index = pc.Index(index_name)
 
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text")
+    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text", namespace = namespace)
 
     return vectorstore
