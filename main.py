@@ -105,9 +105,6 @@ if query:
         "question": query
     }
 
-    # ✅ Only show heading after query
-    st.markdown("#### Detailed Answer with Follow-Up and Quiz")
-
     with st.spinner("⌨️ Generating answer..."):
         answer = answer_chain.invoke(input_data)
         answer_container.markdown(answer)
