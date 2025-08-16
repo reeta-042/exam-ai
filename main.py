@@ -68,7 +68,7 @@ if not session_active:
 st.subheader("...Ask Away...")
 query = st.text_input(
     "What do you want to know?",
-    placeholder="e.g., ......What is.....?",
+    placeholder="e.g., Let your query be well detailed...",
     label_visibility="collapsed",
     disabled=not session_active
 )
