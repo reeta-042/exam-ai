@@ -60,10 +60,11 @@ answer_container = st.empty()
 followup_container = st.empty()
 quiz_container = st.empty()
 
+st.markdown("#### Detailed Answer with Follow-Up and Quiz")
+
 # STEP 5–8: Logic
 if query:
-    st.markdown("#### Detailed Answer with Follow-Up and Quiz")  
-
+      
     with st.spinner("🔍 Searching your course material..."):
         retrieved_docs = retrieve_hybrid_docs(query, vectorstore)
 
@@ -89,17 +90,17 @@ if query:
         quiz_card = quiz_chain.invoke(input_data)
 
     # ✅ Render quiz only if it exists
-    if quiz_card:
-        with quiz_container:
-            st.markdown("### 📘 Learn Through Quiz")
-            for i, q in enumerate(quiz_card):
-                st.markdown(f"**Q{i+1}: {q['question']}**")
-                for label, opt in q["options"].items():
-                    st.markdown(f"- **{label}.**&nbsp;&nbsp;{opt}", unsafe_allow_html=True)
-                st.markdown(f"✅ **Correct Answer:** {q['answer']}")
-                if q["explanation"]:
-                    st.markdown(f"**Why?** {q['explanation']}")
-                st.markdown("---")
-    else:
-        st.warning("Quiz could not be generated. Please check your prompt or context.")
-    
+if quiz_card:
+    quiz_box = quiz_container.container()
+    with quiz_box:
+        st.markdown("## 📝 Learn Through Quiz")
+        for i, q in enumerate(quiz_card):
+            st.markdown(f"**Q{i+1}: {q['question']}**")
+            for label, opt in q["options"].items():
+                st.markdown(f"- {label}. {opt}")
+            st.markdown(f"✅ **Correct Answer:** {q['answer']}")
+            if q["explanation"]:
+                st.markdown(f"💡 *Why?* {q['explanation']}")
+            st.markdown("---")
+else:
+    st.warning("Quiz could not be generated. Please check your prompt or context.")
