@@ -5,7 +5,7 @@ import streamlit as st
 # Import functions from their respective files
 from app.chain import build_llm_chain, retrieve_hybrid_docs, rerank_documents
 from app.streamlit import upload_pdfs, save_uploaded_files
-from app.utility import (
+from app.utils import (
     cached_chunk_pdf,
     cached_get_vectorstore,
     get_bm25_retriever_from_chunks
@@ -19,8 +19,39 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-
-
+# ------------------- CUSTOM THEME -------------------
+st.markdown("""
+<style>
+    /* Main background color */
+    .main .block-container {
+        background-color: #FFFFFF;
+        color: #262730; /* Default text color */
+    }
+    /* Sidebar background - CHANGED to a softer, higher-contrast gray */
+    [data-testid="stSidebar"] {
+        background-color: #F0F2F6;
+    }
+    /* Highlight color for widgets */
+    .st-emotion-cache-1v0mbdj, .st-emotion-cache-1r6slb0, .st-emotion-cache-1d3w5bk {
+        border-color: #A7C7E7; /* Soft Blue */
+    }
+    /* Button color */
+    .stButton>button {
+        background-color: #A7C7E7;
+        color: #262730;
+        border: 2px solid #A7C7E7;
+    }
+    .stButton>button:hover {
+        background-color: #FFFFFF;
+        color: #A7C7E7;
+        border: 2px solid #A7C7E7;
+    }
+    /* Headers */
+    h1, h2, h3 {
+        color: #0047AB; /* A darker, more serious blue for headers */
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # ------------------- API KEYS & CONSTANTS -------------------
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
@@ -28,10 +59,6 @@ PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
 UPLOAD_DIR = "uploaded_files"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-
-
-
 
 # ------------------- SIDEBAR FOR FILE UPLOADS -------------------
 with st.sidebar:
@@ -41,6 +68,10 @@ with st.sidebar:
     uploaded_files, submitted = upload_pdfs()
 
     if submitted and uploaded_files:
+        # When new files are submitted, clear old session data to start fresh.
+        for key in st.session_state.keys():
+            del st.session_state[key]
+        
         namespace = f"session_{uuid.uuid4().hex}"
         st.session_state["namespace"] = namespace
 
@@ -48,18 +79,15 @@ with st.sidebar:
             file_paths = save_uploaded_files(uploaded_files)
             all_chunks = []
             for path in file_paths:
-                # Use the imported cached function
                 chunks = cached_chunk_pdf(path)
                 all_chunks.extend(chunks)
             st.session_state["all_chunks"] = all_chunks
 
-            # Use the imported store_chunks function (assuming it's in vectorbase)
             from app.vectorbase import store_chunks
             store_chunks(all_chunks, PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
         
         st.success(f"✅ Uploaded {len(uploaded_files)} file(s) successfully!")
         st.rerun()
-
 
 # ------------------- MAIN PAGE LAYOUT -------------------
 st.title("💻 ExamAI: Chat with your Course Material")
@@ -72,19 +100,23 @@ if not session_active:
 st.subheader("...Ask Away...")
 query = st.text_input(
     "What do you want to know?",
-    placeholder="e.g., What is the definition of data?",
+    placeholder="e.g., ......What is.....?",
     label_visibility="collapsed",
     disabled=not session_active
 )
 
-
 # ------------------- QUERY PROCESSING & DISPLAY -------------------
+# This block now contains ALL logic that runs when a query is submitted.
 if query and session_active:
-    namespace = st.session_state["namespace"]
-    all_chunks = st.session_state["all_chunks"]
-    vectorstore = cached_get_vectorstore(PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
-    bm25_retriever = get_bm25_retriever_from_chunks(all_chunks)
+    
+    # STEP 1: Load retrievers ON-DEMAND for this specific query.
+    with st.spinner("Initializing retrieval engine..."):
+        namespace = st.session_state["namespace"]
+        all_chunks = st.session_state["all_chunks"]
+        vectorstore = cached_get_vectorstore(PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
+        bm25_retriever = get_bm25_retriever_from_chunks(all_chunks)
 
+    # STEP 2: Perform retrieval and reranking.
     with st.spinner("🕵️‍♂️ Searching your documents..."):
         retrieved_docs = retrieve_hybrid_docs(query, vectorstore, bm25_retriever, top_k=15)
 
@@ -96,6 +128,7 @@ if query and session_active:
         if not reranked_docs:
             reranked_docs = retrieved_docs
 
+        # STEP 3: Generate and display results in tabs.
         answer_tab, quiz_tab, context_tab = st.tabs(["💡 Answer", "📝 Quiz", "🔍 Retrieved Context"])
 
         input_data = {
@@ -105,12 +138,12 @@ if query and session_active:
         answer_chain, followup_chain, quiz_chain = build_llm_chain(api_key=GOOGLE_API_KEY)
 
         with answer_tab:
-            st.markdown("#### Main Answer")
+            st.markdown("### Main Answer")
             with st.spinner("⌨️ Generating answer..."):
                 answer = answer_chain.invoke(input_data)
                 st.markdown(answer)
             
-            st.markdown("#### 🗨️ Follow-up Questions")
+            st.markdown("### 🗨️ Follow-up Questions")
             with st.spinner("Thinking of more questions..."):
                 followup = followup_chain.invoke(input_data)
                 st.markdown(followup)
@@ -136,4 +169,4 @@ if query and session_active:
             st.markdown("These are the top chunks retrieved from your document to generate the answer.")
             for i, doc in enumerate(reranked_docs):
                 st.info(f"**Chunk {i+1}:**\n\n" + doc.page_content)
-
+                
