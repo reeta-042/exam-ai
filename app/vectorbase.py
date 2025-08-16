@@ -1,10 +1,9 @@
-
-
 from pinecone import Pinecone  # Official Pinecone SDK (v3+)
 from langchain_pinecone import Pinecone as LangChainPinecone
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.retrievers import BM25Retriever
 from langchain.docstore.document import Document
+import time
 
 
 def store_chunks(chunks, api_key, index_name, namespace: str = ""):
@@ -20,13 +19,20 @@ def store_chunks(chunks, api_key, index_name, namespace: str = ""):
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     # Wrap Pinecone with LangChain
-    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text",namespace = namespace)
+    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text", namespace=namespace)
 
     # Convert chunks to LangChain documents
     docs = [Document(page_content=chunk.page_content) for chunk in chunks]
 
     # Add documents to Pinecone
-    vectorstore.add_documents(docs,namespace = namespace)
+    vectorstore.add_documents(docs, namespace=namespace)
+
+    # ✅ Warm-up: ensure docs are indexed
+    for _ in range(5):  # retry up to ~5 seconds
+        res = vectorstore.similarity_search("warmup", k=1, namespace=namespace)
+        if res:
+            break
+        time.sleep(1)
 
     return vectorstore
 
@@ -41,7 +47,7 @@ def get_bm25_retriever(chunks):
     return bm25
 
 
-def get_vectorstore(api_key, index_name,namespace : str = ""):
+def get_vectorstore(api_key, index_name, namespace: str = ""):
     """
     Loads the existing Pinecone index.
     """
@@ -49,6 +55,6 @@ def get_vectorstore(api_key, index_name,namespace : str = ""):
     index = pc.Index(index_name)
 
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text", namespace = namespace)
+    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text", namespace=namespace)
 
     return vectorstore
