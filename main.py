@@ -49,51 +49,54 @@ else:
     except:
         st.warning("⚠️ Please upload a PDF first.")
         st.stop()
-# STEP 3: User asks a question
-st.subheader("....Ask away....🌚")
+# STEP 3: User input
 query = st.text_input("What do you want to know?")
 
-# Setting up the containers
+# STEP 4: Containers
 answer_container = st.empty()
 followup_container = st.empty()
 quiz_container = st.empty()
 
-
-# STEP 5–8: Run chains and render output
+# STEP 5–8: Logic
 if query:
-    # STEP 5: Retrieve documents (Hybrid search)
+    st.markdown("## Detailed Answer with Follow-Up and Quiz")  # ✅ Heading once
+
     with st.spinner("🔍 Searching your course material..."):
         retrieved_docs = retrieve_hybrid_docs(query, vectorstore)
 
-    # STEP 6: Apply reranker
-    with st.spinner("📚 Reranking the most relevant chunks..."):
+    with st.spinner("📚 Reranking..."):
         reranked_docs = rerank_documents(query, retrieved_docs)
 
-    # STEP 7: Build the chain
     answer_chain, followup_chain, quiz_chain = build_llm_chain(api_key=GOOGLE_API_KEY)
 
-    # Prepare input for chains
     input_data = {
         "context": "\n\n".join([doc.page_content for doc in reranked_docs]),
         "question": query
     }
 
-    # STEP 8: Invoke each chain sequentially
-    st.markdown("### Detailed Answer with Follow-Up and Quiz ")
-
     with st.spinner("⌨️ Generating answer..."):
         answer = answer_chain.invoke(input_data)
         answer_container.markdown(answer)
 
-    with st.spinner("👀 Generating follow-up questions..."):
+    with st.spinner("👀 Generating follow-up..."):
         followup = followup_chain.invoke(input_data)
         followup_container.markdown(followup)
 
     with st.spinner("🚶 Generating quiz..."):
-        quiz_card = quiz_chain.invoke(input_data)  # Already parsed via RunnableLambda
-        quiz_container.markdown(quiz_card)
-    
-else:
-    st.info("Please enter a question to get started.")
+        quiz_card = quiz_chain.invoke(input_data)
 
+    # ✅ Render quiz only if it exists
+    if quiz_card:
+        with quiz_container:
+            st.markdown("### 📘 Learn Through Quiz")
+            for i, q in enumerate(quiz_card):
+                st.markdown(f"**Q{i+1}: {q['question']}**")
+                for label, opt in q["options"].items():
+                    st.markdown(f"- **{label}.**&nbsp;&nbsp;{opt}", unsafe_allow_html=True)
+                st.markdown(f"✅ **Correct Answer:** {q['answer']}")
+                if q["explanation"]:
+                    st.markdown(f"**Why?** {q['explanation']}")
+                st.markdown("---")
+    else:
+        st.warning("Quiz could not be generated. Please check your prompt or context.")
     
