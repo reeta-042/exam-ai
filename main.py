@@ -1,16 +1,17 @@
 import os
 import uuid
 import streamlit as st
-from app.loaders import load_and_chunk_pdf
-from app.vectorbase import store_chunks, get_vectorstore, get_bm25_retriever
+
+# Import functions from their respective files
 from app.chain import build_llm_chain, retrieve_hybrid_docs, rerank_documents
 from app.streamlit import upload_pdfs, save_uploaded_files
-
-# Caching helpers
-from streamlit.runtime.caching import cache_data, cache_resource
+from app.utility import (
+    cached_chunk_pdf,
+    cached_get_vectorstore,
+    get_bm25_retriever_from_chunks
+)
 
 # ------------------- PAGE CONFIGURATION -------------------
-# This should be the very first Streamlit command.
 st.set_page_config(
     page_title="ExamAI 📄",
     page_icon="🤖",
@@ -19,21 +20,20 @@ st.set_page_config(
 )
 
 # ------------------- CUSTOM THEME -------------------
-# Injects CSS to set the white background and soft blue highlights.
 st.markdown("""
 <style>
     /* Main background color */
     .main .block-container {
         background-color: #FFFFFF;
-        color: #262730; /* Default text color */
+        color: #262730;
     }
     /* Sidebar background */
     [data-testid="stSidebar"] {
-        background-color: #F0F8FF; /* AliceBlue, a very light, soft blue */
+        background-color: #F0F8FF;
     }
     /* Highlight color for widgets */
     .st-emotion-cache-1v0mbdj, .st-emotion-cache-1r6slb0, .st-emotion-cache-1d3w5bk {
-        border-color: #A7C7E7; /* Soft Blue */
+        border-color: #A7C7E7;
     }
     /* Button color */
     .stButton>button {
@@ -48,7 +48,7 @@ st.markdown("""
     }
     /* Headers */
     h1, h2, h3 {
-        color: #0047AB; /* A darker, more serious blue for headers */
+        color: #0047AB;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -62,18 +62,7 @@ UPLOAD_DIR = "uploaded_files"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-# ------------------- CACHING & HELPER FUNCTIONS -------------------
-@cache_data(show_spinner=False)
-def cached_chunk_pdf(file_path: str):
-    return load_and_chunk_pdf(file_path)
 
-@cache_resource
-def cached_get_vectorstore(_api_key, _index_name, _namespace):
-    return get_vectorstore(_api_key, _index_name, _namespace)
-
-# BM25 retriever is lightweight and created on each run to avoid stale state.
-def get_bm25_retriever_from_chunks(chunks):
-    return get_bm25_retriever(chunks)
 
 
 # ------------------- SIDEBAR FOR FILE UPLOADS -------------------
@@ -91,10 +80,13 @@ with st.sidebar:
             file_paths = save_uploaded_files(uploaded_files)
             all_chunks = []
             for path in file_paths:
+                # Use the imported cached function
                 chunks = cached_chunk_pdf(path)
                 all_chunks.extend(chunks)
             st.session_state["all_chunks"] = all_chunks
 
+            # Use the imported store_chunks function (assuming it's in vectorbase)
+            from app.vectorbase import store_chunks
             store_chunks(all_chunks, PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
         
         st.success(f"✅ Uploaded {len(uploaded_files)} file(s) successfully!")
@@ -104,7 +96,6 @@ with st.sidebar:
 # ------------------- MAIN PAGE LAYOUT -------------------
 st.title("💻 ExamAI: Chat with your Course Material")
 
-# Check if a session is active. If not, prompt user to upload files.
 session_active = "namespace" in st.session_state and "all_chunks" in st.session_state
 
 if not session_active:
@@ -115,13 +106,12 @@ query = st.text_input(
     "What do you want to know?",
     placeholder="e.g., What is the definition of data?",
     label_visibility="collapsed",
-    disabled=not session_active # Input is disabled until files are uploaded
+    disabled=not session_active
 )
 
 
 # ------------------- QUERY PROCESSING & DISPLAY -------------------
 if query and session_active:
-    # On every query, load the vectorstore and create a fresh BM25 retriever.
     namespace = st.session_state["namespace"]
     all_chunks = st.session_state["all_chunks"]
     vectorstore = cached_get_vectorstore(PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
@@ -138,7 +128,6 @@ if query and session_active:
         if not reranked_docs:
             reranked_docs = retrieved_docs
 
-        # Use tabs for a clean, organized output.
         answer_tab, quiz_tab, context_tab = st.tabs(["💡 Answer", "📝 Quiz", "🔍 Retrieved Context"])
 
         input_data = {
@@ -179,4 +168,4 @@ if query and session_active:
             st.markdown("These are the top chunks retrieved from your document to generate the answer.")
             for i, doc in enumerate(reranked_docs):
                 st.info(f"**Chunk {i+1}:**\n\n" + doc.page_content)
-                        
+
