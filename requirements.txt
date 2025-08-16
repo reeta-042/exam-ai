@@ -1,7 +1,7 @@
 streamlit
 langchain_google_genai
 langchain_community 
-PyMuPDF
+unstructured[local-inference]
 sentence_transformers
 python-dotenv
 langchain-text-splitters
