@@ -1,7 +1,7 @@
 streamlit
 langchain_google_genai
 langchain_community 
-unstructured[local-inference]
+PyMuPDF
 sentence_transformers
 python-dotenv
 langchain-text-splitters
@@ -10,4 +10,4 @@ langchain-huggingface
 langchain-pinecone
 pinecone >= 3.0.0
 google_genai
-opencv-python-headless
+
