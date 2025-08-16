@@ -90,7 +90,7 @@ answer_container = st.empty()
 followup_container = st.empty()
 quiz_container = st.empty()
 
-st.markdown("#### Detailed Answer with Follow-Up and Quiz")
+#st.markdown("#### Detailed Answer with Follow-Up and Quiz")
 
 
 # STEP 5: Processing Query
