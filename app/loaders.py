@@ -13,8 +13,8 @@ def load_and_chunk_pdf(file_path: str):
 
     # The chunking strategy remains the same
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=700,
-        chunk_overlap=120,
+        chunk_size=1000,
+        chunk_overlap=200,
         length_function=len,
         add_start_index=True,
     )
