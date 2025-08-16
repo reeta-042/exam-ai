@@ -19,39 +19,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ------------------- CUSTOM THEME -------------------
-st.markdown("""
-<style>
-    /* Main background color */
-    .main .block-container {
-        background-color: #FFFFFF;
-        color: #262730;
-    }
-    /* Sidebar background */
-    [data-testid="stSidebar"] {
-        background-color: #F0F8FF;
-    }
-    /* Highlight color for widgets */
-    .st-emotion-cache-1v0mbdj, .st-emotion-cache-1r6slb0, .st-emotion-cache-1d3w5bk {
-        border-color: #A7C7E7;
-    }
-    /* Button color */
-    .stButton>button {
-        background-color: #A7C7E7;
-        color: #262730;
-        border: 2px solid #A7C7E7;
-    }
-    .stButton>button:hover {
-        background-color: #FFFFFF;
-        color: #A7C7E7;
-        border: 2px solid #A7C7E7;
-    }
-    /* Headers */
-    h1, h2, h3 {
-        color: #0047AB;
-    }
-</style>
-""", unsafe_allow_html=True)
+
 
 
 # ------------------- API KEYS & CONSTANTS -------------------
@@ -137,12 +105,12 @@ if query and session_active:
         answer_chain, followup_chain, quiz_chain = build_llm_chain(api_key=GOOGLE_API_KEY)
 
         with answer_tab:
-            st.markdown("### Main Answer")
+            st.markdown("#### Main Answer")
             with st.spinner("⌨️ Generating answer..."):
                 answer = answer_chain.invoke(input_data)
                 st.markdown(answer)
             
-            st.markdown("### 🤔 Follow-up Questions")
+            st.markdown("#### 🗨️ Follow-up Questions")
             with st.spinner("Thinking of more questions..."):
                 followup = followup_chain.invoke(input_data)
                 st.markdown(followup)
