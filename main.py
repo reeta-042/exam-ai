@@ -5,7 +5,7 @@ import streamlit as st
 # Import functions from their respective files
 from app.chain import build_llm_chain, retrieve_hybrid_docs, rerank_documents
 from app.streamlit import upload_pdfs, save_uploaded_files
-from app.utils import (
+from app.utility import (
     cached_chunk_pdf,
     cached_get_vectorstore,
     get_bm25_retriever_from_chunks
@@ -52,6 +52,8 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+
 
 # ------------------- API KEYS & CONSTANTS -------------------
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
