@@ -10,7 +10,7 @@ import re
 
 
 
-def retrieve_hybrid_docs(query: str, vectorstore, bm25_retriever: BM25Retriever, top_k: int = 5):
+def retrieve_hybrid_docs(query: str, vectorstore, bm25_retriever: BM25Retriever, top_k = 5):
     """
     Performs a true hybrid retrieval by combining results from
     semantic search (vectorstore) and keyword search (BM25).
