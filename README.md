@@ -34,14 +34,16 @@ During development, it became clear that standard PDF text extraction libraries 
 
 This ensures that the text fed into the chunking process is of the highest possible quality, which is the most critical step for accurate retrieval.
 
-### Chunking Strategy: `chunk_size=700`, `chunk_overlap=120`
+### Chunking Strategy: `chunk_size=1000`, `chunk_overlap=200`
 
-The quality of retrieval is highly dependent on how the source material is chunked. My strategy is designed to create focused, semantically complete chunks:
+The quality of retrieval is highly dependent on how the source material is chunked. The chosen strategy prioritizes creating chunks with **rich contextual information** while ensuring **semantic continuity**.
 
-*   **`chunk_size=700`:** This size is small enough to ensure that each chunk is focused on a single, specific topic or paragraph. This prevents "diluting" the chunk's relevance with unrelated information, making it easier for the retrieval system to find precise answers to specific questions.
-*   **`chunk_overlap=120`:** A significant overlap (around 17%) is crucial to maintain context. It ensures that if a sentence or idea is split at the boundary of a chunk, the full context is preserved across adjacent chunks, preventing the loss of important information.
+*   **`chunk_size=1000`:** This larger chunk size is deliberately chosen to provide the language model with more comprehensive context for each retrieved passage. Instead of just getting a single sentence or a small fact, the model receives a fuller paragraph or section. This is particularly effective for answering broader, more complex questions that require understanding the relationships between different ideas within the text. It allows for more nuanced and detailed responses.
 
-This combination balances focus with context, optimizing the chunks for our hybrid retrieval system.
+*   **`chunk_overlap=200`:** A significant overlap of 20% is crucial for maintaining the integrity of the document's ideas. When the splitter is forced to break a paragraph or a long sentence, this large overlap ensures that the full context is preserved across adjacent chunks. This acts as a robust "safety net," preventing the loss of meaning that can occur at chunk boundaries.
+
+This combination balances the need for rich context with the importance of continuity, optimizing the chunks for a powerful retrieval system that can handle both specific and broad queries.
+
 
 ## Setup and Installation
 
