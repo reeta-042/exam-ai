@@ -4,7 +4,7 @@ import tempfile
 def upload_pdfs():
     with st.sidebar:
         st.header("📁 Upload PDF")
-        uploaded_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=False)
+        uploaded_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=True)
         submit = st.button(" Submit file here!")
     return uploaded_files, submit
 
