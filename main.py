@@ -49,7 +49,10 @@ else:
     except:
         st.warning("⚠️ Please upload a PDF first.")
         st.stop()
+
+
 # STEP 3: User input
+st.subheader("...Ask Away...")
 query = st.text_input("What do you want to know?")
 
 # STEP 4: Containers
@@ -59,7 +62,7 @@ quiz_container = st.empty()
 
 # STEP 5–8: Logic
 if query:
-    st.markdown("## Detailed Answer with Follow-Up and Quiz")  # ✅ Heading once
+    st.markdown("#### Detailed Answer with Follow-Up and Quiz")  
 
     with st.spinner("🔍 Searching your course material..."):
         retrieved_docs = retrieve_hybrid_docs(query, vectorstore)
