@@ -3,7 +3,7 @@
 
 ExamAI is an intelligent study application designed to help students prepare for exams by transforming their course materials into an interactive learning experience. Users can upload their PDF documents, and the application will leverage a sophisticated AI pipeline to answer questions, generate follow-up queries, and create quizzes based on the provided content.
 
-This project is built to tackle the common challenge of studying from poorly formatted or complex academic documents, ensuring that students can get accurate and relevant information from their notes, no matter the format.
+The aim of this project is for students to be able to prepare extensively for their exams, cover their course materials even within a short period of time, and also understand the material properly with the interactive learning methods provided.
 
 ## Chosen Tech Stack
 
@@ -17,22 +17,19 @@ The application is built using a modern, powerful stack for AI and web developme
     *   **Sentence-Transformers:** Used to create dense vector embeddings of the text chunks.
 *   **Frontend:**
     *   **Streamlit:** A Python framework for rapidly building and deploying interactive web applications.
-*   **Key Data Processing Libraries:**
-    *   **`unstructured[local-inference]`:** A powerful library for parsing complex and poorly structured PDFs by understanding the document layout.
-    *   **`opencv-python-headless`:** A dependency for computer vision tasks required by `unstructured`.
+  
+  *   **Key Data Processing Libraries:**
+    *   **`PyMuPDF`:** The core library that powers the `PyMuPDFLoader`. It is used for robustly parsing PDF documents. It is significantly more effective than standard loaders at accurately extracting text and preserving the document's structure, which is critical for creating high-quality, relevant chunks.
+    
 
-## Core Technical Decisions Explained
+### Core Technical Decisions Explained
 
-### Why `unstructured[local-inference]`?
+#### PDF Loader: Why `PyMuPDFLoader`?
 
-During development, it became clear that standard PDF text extraction libraries (`PyPDFLoader`, `PyMuPDFLoader`) failed on certain real-world academic documents. These documents often have complex layouts, multi-column text, embedded tables, and inconsistent formatting, which caused the retrieval system to pull irrelevant chunks of text (e.g., SQL commands instead of a definition for "data").
+During development, it became clear that the default PDF text extraction library was insufficient for handling academic documents, often leading to poor quality text and irrelevant search results. While more advanced libraries like `unstructured` offer powerful layout analysis, they also introduce significant system-level dependencies that are complex to manage in a cloud deployment environment.
 
-**`unstructured[local-inference]`** was chosen to solve this critical problem. Unlike simpler loaders, it doesn't just read text streams; it uses computer vision and layout-parsing models to:
-1.  **Understand the visual structure** of the page.
-2.  **Intelligently identify** distinct elements like titles, paragraphs, and lists.
-3.  **Extract clean, logically coherent text blocks.**
+**`PyMuPDFLoader`** was chosen as the optimal solution, providing a crucial balance between performance and reliability. It is significantly better at extracting clean text and preserving document structure than the standard loaders, without requiring complex system configurations. This ensures the application remains robust, easy to deploy, and effective for the vast majority of PDF documents.
 
-This ensures that the text fed into the chunking process is of the highest possible quality, which is the most critical step for accurate retrieval.
 
 ### Chunking Strategy: `chunk_size=1000`, `chunk_overlap=200`
 
