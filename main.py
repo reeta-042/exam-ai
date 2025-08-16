@@ -91,18 +91,8 @@ if query:
 
     with st.spinner("🚶 Generating quiz..."):
         quiz_card = quiz_chain.invoke(input_data)  # Already parsed via RunnableLambda
-
-    # STEP 9: Format and display quiz as a learning tool
-    with quiz_container:
-        st.markdown("### 📘 Learn Through Quiz")
-        for i, q in enumerate(quiz_card):
-            st.markdown(f"**Q{i+1}: {q['question']}**")
-            for label, opt in q["options"].items():
-                st.markdown(f"- **{label}.**&nbsp;&nbsp;{opt}", unsafe_allow_html=True)
-            st.markdown(f"✅ **Correct Answer:** {q['answer']}")
-            if q["explanation"]:
-                st.markdown(f"**Why?** {q['explanation']}")
-            st.markdown("---")
+        quiz_container.markdown(quiz_card)
+    
 else:
     st.info("Please enter a question to get started.")
 
