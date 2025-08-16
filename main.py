@@ -1,69 +1,101 @@
 import os
+import uuid
 import streamlit as st
 from app.loaders import load_and_chunk_pdf
 from app.vectorbase import store_chunks, get_vectorstore, get_bm25_retriever
-from app.chain import build_llm_chain, retrieve_hybrid_docs, rerank_documents, format_quiz_card
-from app.streamlit import upload_pdfs
-#Loading my API KEYS
+from app.chain import build_llm_chain, retrieve_hybrid_docs, rerank_documents
+from app.streamlit import upload_pdfs, save_uploaded_files
+
+# Caching helpers
+from streamlit.runtime.caching import cache_data, cache_resource
+
+# 🔑 API Keys
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
-#PINECONE_ENV = st.secrets["PINECONE_ENV"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
 
-# Set Streamlit page configuration
+# Page setup
 st.set_page_config(page_title="📄 Chat with your PDF and prep for your exams", layout="wide")
-st.title("💻ExamAI: Chat with your Course Material")
+st.title("💻 ExamAI: Chat with your Course Material")
 
 UPLOAD_DIR = "uploaded_files"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# STEP 1: Upload PDF
-pdf_file, submitted = upload_pdfs()
 
-# STEP 2: Load + Index PDF if user submitted
-if pdf_file and submitted:
-    file_path = os.path.join(UPLOAD_DIR, pdf_file.name)
-    with open(file_path, "wb") as f:
-        f.write(pdf_file.read())
 
-    st.sidebar.success(f"Uploaded: {pdf_file.name}")
+# STEP 1: Upload PDFs
+
+uploaded_files, submitted = upload_pdfs()
+
+@cache_data(show_spinner=False)
+def cached_chunk_pdf(file_path: str):
+    return load_and_chunk_pdf(file_path)
+
+@cache_resource
+def cached_get_vectorstore(api_key, index_name, namespace):
+    return get_vectorstore(api_key, index_name, namespace)
+
+
+
+# STEP 2: Store / Load Vectorstore
+
+if submitted and uploaded_files:
+    # Create a fresh namespace for this upload
+    namespace = f"session_{uuid.uuid4().hex}"
+    st.session_state["current_namespace"] = namespace
+
+    file_paths = save_uploaded_files(uploaded_files)
+
+    all_chunks = []
+    for path in file_paths:
+        chunks = cached_chunk_pdf(path)
+        all_chunks.extend(chunks)
 
     with st.spinner("... Loading👀..."):
-        chunks = load_and_chunk_pdf(file_path)
-        st.success("✅ Course material loaded successfully!")
-
         vectorstore = store_chunks(
-            chunks,
+            all_chunks,
             api_key=PINECONE_API_KEY,
-            index_name=PINECONE_INDEX_NAME
+            index_name=PINECONE_INDEX_NAME,
+            namespace=namespace
         )
+        bm25 = get_bm25_retriever(all_chunks)
 
-        bm25 = get_bm25_retriever(chunks)
+    st.sidebar.success(f"✅ Uploaded {len(uploaded_files)} file(s) successfully!")
+
 else:
-    try:
-        chunks = []  # placeholder
-        vectorstore = get_vectorstore(
+    # Reuse namespace if it exists
+    if "current_namespace" in st.session_state:
+        namespace = st.session_state["current_namespace"]
+        vectorstore = cached_get_vectorstore(
             api_key=PINECONE_API_KEY,
-            index_name=PINECONE_INDEX_NAME
+            index_name=PINECONE_INDEX_NAME,
+            namespace=namespace
         )
-    except:
-        st.warning("⚠️ Please upload a PDF first.")
+    else:
+        st.warning("⚠️ Please upload at least one PDF.")
         st.stop()
 
 
-# STEP 3: User input
+
+# STEP 3: User Query
+
 st.subheader("...Ask Away...")
 query = st.text_input("What do you want to know?")
 
+
+
 # STEP 4: Containers
+
 answer_container = st.empty()
 followup_container = st.empty()
 quiz_container = st.empty()
 
 st.markdown("#### Detailed Answer with Follow-Up and Quiz")
 
+
+# STEP 5: Processing Query
 if query:
-      
+
     with st.spinner("🔍 Searching your course material..."):
         retrieved_docs = retrieve_hybrid_docs(query, vectorstore)
 
@@ -88,18 +120,21 @@ if query:
     with st.spinner("🚶 Generating quiz..."):
         quiz_card = quiz_chain.invoke(input_data)
 
-    # ✅ Render quiz only if it exists
-if quiz_card:
-    quiz_box = quiz_container.container()
-    with quiz_box:
-        st.markdown("## 📝 Learn Through Quiz")
-        for i, q in enumerate(quiz_card):
-            st.markdown(f"**Q{i+1}: {q['question']}**")
-            for label, opt in q["options"].items():
-                st.markdown(f"- {label}. {opt}")
-            st.markdown(f"✅ **Correct Answer:** {q['answer']}")
-            if q["explanation"]:
-                st.markdown(f"💡 *Why?* {q['explanation']}")
-            st.markdown("---")
-else:
-    st.warning("Quiz could not be generated. Please check your prompt or context.")
+    
+    # STEP 6: Render Quiz
+    
+    if quiz_card:
+        quiz_box = quiz_container.container()
+        with quiz_box:
+            st.markdown("## 📝 Learn Through Quiz")
+            for i, q in enumerate(quiz_card):
+                st.markdown(f"**Q{i+1}: {q['question']}**")
+                for label, opt in q["options"].items():
+                    if opt:  # avoid None
+                        st.markdown(f"- {label}. {opt}")
+                st.markdown(f"✅ **Correct Answer:** {q['answer']}")
+                if q["explanation"]:
+                    st.markdown(f"💡 *Why?* {q['explanation']}")
+                st.markdown("---")
+    else:
+        st.warning("Quiz could not be generated. Please check your prompt or context.")
