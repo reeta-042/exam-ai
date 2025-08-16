@@ -78,7 +78,7 @@ Answer:""")
 
     followup_prompt = PromptTemplate.from_template("""
 You are a thoughtful AI tutor. Based on the context and the question, 
-provide 3-5 bullet point follow-ups that expand the student's understanding.
+provide  bullet point follow-ups that expand the student's understanding.
 
 Context:
 {context}
