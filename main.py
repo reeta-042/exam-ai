@@ -62,7 +62,6 @@ quiz_container = st.empty()
 
 st.markdown("#### Detailed Answer with Follow-Up and Quiz")
 
-# STEP 5–8: Logic
 if query:
       
     with st.spinner("🔍 Searching your course material..."):
