@@ -12,5 +12,6 @@ pinecone >= 3.0.0
 google_genai
 unstructured[local-inference]
 opencv-python-headless
+pytesseract
 
 
