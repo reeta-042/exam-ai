@@ -10,7 +10,7 @@ def load_and_chunk_pdf(file_path: str):
     # The 'mode="single"' strategy is often best. It treats the whole
     # document as one big page, which allows the text splitter to find
     # the best semantic breaks.
-    loader = UnstructuredPDFLoader(file_path, mode="single", strategy="fast")
+    loader = UnstructuredPDFLoader(file_path, mode="single", strategy="ocr_only")
     pages = loader.load()
 
     # The chunking strategy remains the same
