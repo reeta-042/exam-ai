@@ -1,6 +1,8 @@
 # Exam-prep.ai
 # 🤖 ExamAI: Your Personal AI Study Assistant
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://exam-prepai.streamlit.app/)
+
 ExamAI is an intelligent study application designed to help students prepare for exams by transforming their course materials into an interactive learning experience. Users can upload their PDF documents, and the application will leverage a sophisticated AI pipeline to answer questions, generate follow-up queries, and create quizzes based on the provided content.
 
 The aim of this project is for students to be able to prepare extensively for their exams, cover their course materials even within a short period of time, and also understand the material properly with the interactive learning methods provided.
