@@ -63,7 +63,7 @@ Follow these steps to set up and run the project locally.
     ```bash
     pip install -r requirements.txt
     ```
-    *Note: The installation for `unstructured[local-inference]` may take some time as it includes several machine learning libraries.*
+    
 
 4.  **Set Up API Keys:**
     The application requires API keys for Google Gemini and Pinecone. Store these securely. The app is configured to use Streamlit Secrets. Create a file at `.streamlit/secrets.toml` and add your keys:
@@ -113,7 +113,7 @@ The application will display the results in a clean, tabbed interface:
 
 ## Limitations and Known Issues
 
-*   **Document Quality Dependency:** While `unstructured` is powerful, the application's performance is still highly dependent on the quality of the source PDF. Extremely degraded, scanned, or poorly formatted documents may still yield suboptimal results.
-*   **Computational Cost:** The initial processing of a document, especially with `unstructured[local-inference]`, can be computationally intensive and may take time, particularly for large documents.
+*   **Document Quality Dependency:** While `PyMuPDF` is powerful, the application's performance is still highly dependent on the quality of the source PDF. Extremely degraded, scanned, or poorly formatted documents may still yield suboptimal results.
+*   **Computational Cost:** The initial processing of a document, especially with `PyMuPDF`, can be computationally intensive and may take time, particularly for large documents.
 *   **Hallucination Risk:** Like all LLM-based systems, there is a small but inherent risk of the AI generating plausible but incorrect information (hallucinating), especially if the context it receives is ambiguous. The "Retrieved Context" tab is provided to help users verify the source of the information.
 
