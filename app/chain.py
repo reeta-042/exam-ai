@@ -3,39 +3,11 @@ from langchain.retrievers import BM25Retriever
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-from langchain.retrievers.document_compressors import CrossEncoderReranker
+#from langchain.retrievers.document_compressors import CrossEncoderReranker
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 import re
 
 
-
-
-def retrieve_hybrid_docs(query: str, vectorstore, bm25_retriever: BM25Retriever, top_k = 5):
-    """
-    Performs a true hybrid retrieval by combining results from
-    semantic search (vectorstore) and keyword search (BM25).
-    """
-    # 1. Perform keyword search using the passed bm25_retriever
-    keyword_docs = bm25_retriever.get_relevant_documents(query, k=top_k)
-    
-    # 2. Perform semantic search
-    semantic_docs = vectorstore.similarity_search(query, k=top_k)
-    
-    # 3. Combine the results and remove duplicates
-    combined_docs = {}
-    for doc in keyword_docs + semantic_docs:
-        combined_docs[doc.page_content] = doc
-        
-    return list(combined_docs.values())
-
-
-
-def rerank_documents(query, docs, top_k=4):
-    """Rerank retrieved docs with a cross encoder."""
-    model = HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
-    reranker = CrossEncoderReranker(model=model)
-    top_docs = reranker.compress_documents(documents=docs, query=query)
-    return top_docs[:top_k]
 
 
 def format_quiz_card(text):
