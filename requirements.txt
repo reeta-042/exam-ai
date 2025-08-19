@@ -13,5 +13,5 @@ google_genai
 unstructured[local-inference]
 opencv-python-headless
 pytesseract
-poppler-utils
+
 
