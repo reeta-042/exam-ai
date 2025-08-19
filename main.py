@@ -120,7 +120,7 @@ if query and session_active:
         with st.spinner("📚 Reranking results for relevance..."):
             # --- NEW: RERANKING LOGIC ---
             rerank_pairs = [(query, doc.page_content) for doc in unique_docs]
-            scores = reranker.predict(rerank_pairs)
+            scores = reranker.score(rerank_pairs)
             scored_docs = list(zip(scores, unique_docs))
             scored_docs.sort(key=lambda x: x[0], reverse=True)
             reranked_docs = [doc for score, doc in scored_docs[:5]]
