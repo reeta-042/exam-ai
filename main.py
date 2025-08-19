@@ -1,9 +1,16 @@
 import os
 import uuid
 import streamlit as st
+from itertools import chain
+import logging
+
+# --- KEY IMPORTS FOR ADVANCED RETRIEVAL ---
+from langchain.retrievers.multi_query import MultiQueryRetriever
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
 # Import functions from their respective files
-from app.chain import build_llm_chain, retrieve_hybrid_docs, rerank_documents
+from app.chain import build_llm_chain # We only need the chain builder now
 from app.streamlit import upload_pdfs, save_uploaded_files
 from app.utility import (
     cached_chunk_pdf,
@@ -19,14 +26,27 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-
-
 # ------------------- API KEYS & CONSTANTS -------------------
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
 UPLOAD_DIR = "uploaded_files"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# --- ADVANCED RETRIEVAL COMPONENTS (CACHED) ---
+@st.cache_resource
+def get_reranker():
+    return HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
+
+@st.cache_resource
+def get_multi_query_llm(_api_key):
+    # This helps see the generated queries in the terminal logs
+    logging.basicConfig()
+    logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
+    return ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=_api_key)
+
+reranker = get_reranker()
+multi_query_llm = get_multi_query_llm(GOOGLE_API_KEY)
 
 # ------------------- SIDEBAR FOR FILE UPLOADS -------------------
 with st.sidebar:
@@ -36,7 +56,6 @@ with st.sidebar:
     uploaded_files, submitted = upload_pdfs()
 
     if submitted and uploaded_files:
-        # When new files are submitted, clear old session data to start fresh.
         for key in st.session_state.keys():
             del st.session_state[key]
         
@@ -74,29 +93,39 @@ query = st.text_input(
 )
 
 # ------------------- QUERY PROCESSING & DISPLAY -------------------
-# This block now contains ALL logic that runs when a query is submitted.
 if query and session_active:
     
-    # STEP 1: Load retrievers ON-DEMAND for this specific query.
     with st.spinner("Initializing retrieval engine..."):
         namespace = st.session_state["namespace"]
         all_chunks = st.session_state["all_chunks"]
         vectorstore = cached_get_vectorstore(PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
         bm25_retriever = get_bm25_retriever_from_chunks(all_chunks)
+        vector_retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
 
-    # STEP 2: Perform retrieval and reranking.
-    with st.spinner("🕵️‍♂️ Searching your documents..."):
-        retrieved_docs = retrieve_hybrid_docs(query, vectorstore, bm25_retriever, top_k=15)
+    with st.spinner("🕵️‍♂️ Generating multiple queries & searching..."):
+        # --- NEW: MULTI-QUERY RETRIEVAL ---
+        multi_query_retriever = MultiQueryRetriever.from_llm(
+            retriever=vector_retriever, llm=multi_query_llm
+        )
+        semantic_docs = multi_query_retriever.invoke(query)
+        keyword_docs = bm25_retriever.invoke(query)
+        
+        all_initial_docs = list(chain(semantic_docs, keyword_docs))
+        unique_docs_map = {doc.page_content: doc for doc in all_initial_docs}
+        unique_docs = list(unique_docs_map.values())
 
-    if not retrieved_docs:
-        st.error("I couldn't find any relevant information in the documents to answer this. Please try another question.")
+    if not unique_docs:
+        st.error("I couldn't find any relevant information in the documents. Please try another question.")
     else:
         with st.spinner("📚 Reranking results for relevance..."):
-            reranked_docs = rerank_documents(query, retrieved_docs, top_k=5)
-        if not reranked_docs:
-            reranked_docs = retrieved_docs
+            # --- NEW: RERANKING LOGIC ---
+            rerank_pairs = [(query, doc.page_content) for doc in unique_docs]
+            scores = reranker.predict(rerank_pairs)
+            scored_docs = list(zip(scores, unique_docs))
+            scored_docs.sort(key=lambda x: x[0], reverse=True)
+            reranked_docs = [doc for score, doc in scored_docs[:5]]
 
-        # STEP 3: Generate and display results in tabs.
+        # --- The rest of the logic remains the same ---
         answer_tab, quiz_tab, context_tab = st.tabs(["💡 Answer", "📝 Quiz", "🔍 Retrieved Context"])
 
         input_data = {
@@ -134,7 +163,7 @@ if query and session_active:
                     st.warning("⚠️ Quiz could not be generated for this topic.")
 
         with context_tab:
-            st.markdown("These are the top chunks retrieved from your document to generate the answer.")
+            st.markdown("These are the top 5 chunks found after advanced retrieval and reranking.")
             for i, doc in enumerate(reranked_docs):
                 st.info(f"**Chunk {i+1}:**\n\n" + doc.page_content)
-                
+        
