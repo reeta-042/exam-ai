@@ -12,7 +12,7 @@ from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 # Import functions from their respective files
 from app.chain import build_llm_chain
 from app.streamlit import upload_pdfs, save_uploaded_files
-from app.vectorbase import 
+from app.vectorbase import cached_get_vectorstore,get_bm25_retriever_from_chunks
 from app.loaders import cached_chunk_pdf
 from app.embeddings import get_embedding_model 
 
