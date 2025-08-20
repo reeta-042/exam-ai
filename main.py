@@ -10,7 +10,7 @@ from itertools import chain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain_groq import ChatGroq
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-
+from app.embeddings import get_advanced_embeddings
 # Import functions from their respective files
 from app.chain import build_llm_chain
 from app.streamlit import upload_pdfs, save_uploaded_files
@@ -20,7 +20,7 @@ from app.utility import (
     get_bm25_retriever_from_chunks
 )
 
-
+embedding_model = get_advanced_embedding_model() 
 
 # ------------------- PAGE CONFIGURATION -------------------
 st.set_page_config(
