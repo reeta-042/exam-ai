@@ -2,15 +2,16 @@ import os
 import uuid
 import streamlit as st
 from itertools import chain
-import logging
 
 # --- KEY IMPORTS FOR ADVANCED RETRIEVAL ---
-from langchain.retrievers.multi_query import MultiQueryRetriever
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain.retrievers import HydeRetriever
+from langchain_groq import ChatGroq
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
 # Import functions from their respective files
-from app.chain import build_llm_chain # We only need the chain builder now
+from app.chain import build_llm_chain
 from app.streamlit import upload_pdfs, save_uploaded_files
 from app.utility import (
     cached_chunk_pdf,
@@ -30,6 +31,7 @@ st.set_page_config(
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"] # Assumes you've added this to secrets
 UPLOAD_DIR = "uploaded_files"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -39,14 +41,11 @@ def get_reranker():
     return HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
 
 @st.cache_resource
-def get_multi_query_llm(_api_key):
-    # This helps see the generated queries in the terminal logs
-    logging.basicConfig()
-    logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
-    return ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=_api_key)
+def get_hyde_llm(_api_key):
+    return ChatGroq(temperature=0, groq_api_key=_api_key, model_name="llama3-8b-8192")
 
 reranker = get_reranker()
-multi_query_llm = get_multi_query_llm(GOOGLE_API_KEY)
+hyde_llm = get_hyde_llm(GROQ_API_KEY)
 
 # ------------------- SIDEBAR FOR FILE UPLOADS -------------------
 with st.sidebar:
@@ -87,7 +86,7 @@ if not session_active:
 st.subheader("...Ask Away...")
 query = st.text_input(
     "What do you want to know?",
-    placeholder="e.g., Let your query be well detailed...",
+    placeholder="e.g., Compare and contrast top-down and bottom-up design...",
     label_visibility="collapsed",
     disabled=not session_active
 )
@@ -100,14 +99,17 @@ if query and session_active:
         all_chunks = st.session_state["all_chunks"]
         vectorstore = cached_get_vectorstore(PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
         bm25_retriever = get_bm25_retriever_from_chunks(all_chunks)
-        vector_retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
 
-    with st.spinner("🕵️‍♂️ Generating multiple queries & searching..."):
-        # --- NEW: MULTI-QUERY RETRIEVAL ---
-        multi_query_retriever = MultiQueryRetriever.from_llm(
-            retriever=vector_retriever, llm=multi_query_llm
+    with st.spinner("🕵️‍♂️ Generating hypothetical answer & searching..."):
+        # --- NEW: HYDE RETRIEVER LOGIC ---
+        hyde_prompt = PromptTemplate(
+            input_variables=["question"],
+            template="Please write a short, concise paragraph that provides a clear answer to the following question.\nQuestion: {question}\nAnswer:"
         )
-        semantic_docs = multi_query_retriever.invoke(query)
+        hyde_chain = LLMChain(llm=hyde_llm, prompt=hyde_prompt)
+        hyde_retriever = HydeRetriever(vectorstore=vectorstore, llm_chain=hyde_chain)
+        
+        semantic_docs = hyde_retriever.invoke(query)
         keyword_docs = bm25_retriever.invoke(query)
         
         all_initial_docs = list(chain(semantic_docs, keyword_docs))
@@ -118,7 +120,6 @@ if query and session_active:
         st.error("I couldn't find any relevant information in the documents. Please try another question.")
     else:
         with st.spinner("📚 Reranking results for relevance..."):
-            # --- NEW: RERANKING LOGIC ---
             rerank_pairs = [(query, doc.page_content) for doc in unique_docs]
             scores = reranker.score(rerank_pairs)
             scored_docs = list(zip(scores, unique_docs))
@@ -166,4 +167,4 @@ if query and session_active:
             st.markdown("These are the top 5 chunks found after advanced retrieval and reranking.")
             for i, doc in enumerate(reranked_docs):
                 st.info(f"**Chunk {i+1}:**\n\n" + doc.page_content)
-        
+                
