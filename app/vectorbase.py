@@ -1,61 +1,57 @@
-from pinecone import Pinecone  # Official Pinecone SDK (v3+)
+# In app/vectorbase.py
+from pinecone import Pinecone
 from langchain_pinecone import Pinecone as LangChainPinecone
-#from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.retrievers import BM25Retriever
-from langchain.docstore.document import Document
 import time
-from app.embeddings import get_advanced_embedding_model
+from app.embeddings import get_embedding_model  # Import the cached function
 
-
-def store_chunks(chunks, api_key, index_name, namespace: str = ""):
+def store_chunks(chunks, api_key, index_name, namespace: str):
     """
-    Stores the given chunks in Pinecone with HuggingFace embeddings.
-    Returns the vectorstore instance.
+    Stores LangChain Document chunks in Pinecone using the cached embedding model.
     """
-    # Create Pinecone client
     pc = Pinecone(api_key=api_key)
     index = pc.Index(index_name)
+    
+    embeddings = get_embedding_model() # Call the cached function
 
-    # Embedding model
-    embeddings = get_advanced_embedding_model()
+    vectorstore = LangChainPinecone.from_documents(
+        documents=chunks,
+        embedding=embeddings,
+        index_name=index_name,
+        namespace=namespace
+    )
 
-    # Wrap Pinecone with LangChain
-    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text", namespace=namespace)
-
-    # Convert chunks to LangChain documents
-    docs = [Document(page_content=chunk.page_content) for chunk in chunks]
-
-    # Add documents to Pinecone
-    vectorstore.add_documents(docs, namespace=namespace)
-
-    # ✅ Warm-up: ensure docs are indexed
-    for _ in range(5):  # retry up to ~5 seconds
-        res = vectorstore.similarity_search("warmup", k=1, namespace=namespace)
-        if res:
+    target_vector_count = len(chunks)
+    for _ in range(10):
+        stats = index.describe_index_stats()
+        if namespace in stats.namespaces and stats.namespaces[namespace].vector_count >= target_vector_count:
             break
         time.sleep(1)
 
     return vectorstore
 
-
-def get_bm25_retriever(chunks):
+def get_bm25_retriever_from_chunks(chunks):
     """
-    Initializes and returns a BM25Retriever from text chunks.
-    Useful for keyword-based retrieval in hybrid search.
+    Initializes and returns a BM25Retriever from a list of documents.
     """
-    bm25 = BM25Retriever.from_documents(chunks)
+    bm25 = BM25Retriever.from_documents(documents=chunks)
     bm25.k = 5
     return bm25
 
-
-def get_vectorstore(api_key, index_name, namespace: str = ""):
+def get_vectorstore(api_key, index_name, namespace: str):
     """
-    Loads the existing Pinecone index.
+    Loads an existing vectorstore from Pinecone.
     """
     pc = Pinecone(api_key=api_key)
     index = pc.Index(index_name)
 
-    embeddings = get_advanced_embedding_model()
-    vectorstore = LangChainPinecone(index, embedding=embeddings, text_key="text", namespace=namespace)
+    embeddings = get_embedding_model() # Call the cached function
+    
+    vectorstore = LangChainPinecone(
+        index=index, 
+        embedding=embeddings, 
+        namespace=namespace
+    )
 
     return vectorstore
+    
