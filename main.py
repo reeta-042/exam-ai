@@ -13,8 +13,8 @@ from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from app.chain import build_llm_chain
 from app.streamlit import upload_pdfs, save_uploaded_files
 from app.vectorbase import get_vectorstore, get_bm25_retriever_from_chunks
-from app.loaders import load_and_chunk_pdf # Assuming this is your loader function
-from app.embeddings import get_embedding_model # Import the single cached model function
+from app.loaders import load_and_chunk_pdf 
+from app.embeddings import get_embedding_model 
 
 # ------------------- PAGE CONFIGURATION -------------------
 st.set_page_config(
