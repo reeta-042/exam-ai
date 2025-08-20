@@ -6,7 +6,7 @@ from itertools import chain
 # --- KEY IMPORTS FOR ADVANCED RETRIEVAL ---
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.retrievers.hyde import HydeRetriever
+from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain_groq import ChatGroq
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
