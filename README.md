@@ -14,6 +14,7 @@ This application is built on a modern, powerful, and carefully selected stack de
 *   **AI Orchestration:** **LangChain** is the primary framework used to structure the entire RAG pipeline, from data ingestion to final answer generation.
 *   **Frontend:** **Streamlit** provides the interactive web application interface.
 *   **Vector Database:** **Pinecone** is used as a high-performance, cloud-based vector store for efficient semantic search.
+*   **Google Gemini:** The Large Language Model (LLM) used for generating answers, follow-up questions, and quizzes.
 
 ### Core Technical Decisions Explained
 
