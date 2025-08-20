@@ -12,6 +12,7 @@ This application is built on a modern, powerful, and carefully selected stack de
 
 *   **Backend & AI Logic:** **Python**
 *   **AI Orchestration:** **LangChain** is the primary framework used to structure the entire RAG pipeline, from data ingestion to final answer generation.
+*   **Sentence transformer**: For embeddings 
 *   **Frontend:** **Streamlit** provides the interactive web application interface.
 *   **Vector Database:** **Pinecone** is used as a high-performance, cloud-based vector store for efficient semantic search.
 *   **Google Gemini:** The Large Language Model (LLM) used for generating answers, follow-up questions, and quizzes.
@@ -25,8 +26,6 @@ Initial development revealed that many academic PDFs, especially those converted
 
 #### 2. The Relevance Problem: A Multi-Layered Retrieval Strategy
 Simply searching for text is not enough to get relevant results. This application uses a sophisticated, multi-stage retrieval process to find the most accurate information:
-
-*   **Advanced Embedding Model (`BAAI/bge-large-en-v1.5`):** Standard embedding models failed to understand the nuances of the (sometimes garbled) academic text. We upgraded to a state-of-the-art, open-source model. This required rebuilding the Pinecone index with a larger vector dimension (`1024`), a critical step that dramatically improved the base semantic search quality.
 
 *   **Hypothetical Document Embeddings (HyDE):** To overcome query ambiguity and API costs from previous methods (`MultiQueryRetriever`), we implemented HyDE. This technique uses a fast, external LLM (**Groq Llama3-8b**) to generate a hypothetical, ideal answer to the user's query *first*. The embedding of this rich, hypothetical answer is then used for the semantic search, resulting in far more relevant document retrieval at virtually no cost.
 
