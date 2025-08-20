@@ -6,7 +6,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 def load_and_chunk_pdf(file_path: str):
     """
     Loads a PDF using the fast and reliable PyMuPDFLoader and splits it into chunks.
-    This is our new, simplified ingestion method.
+    
     """
     print(f"--- Loading document with PyMuPDFLoader: {file_path} ---")
     
