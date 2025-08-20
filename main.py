@@ -1,4 +1,3 @@
-# In main.py
 import os
 import uuid
 import streamlit as st
@@ -12,7 +11,7 @@ from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 # Import functions from their respective files
 from app.chain import build_llm_chain
 from app.streamlit import upload_pdfs, save_uploaded_files
-from app.vectorbase import cached_get_vectorstore,get_bm25_retriever_from_chunks
+from app.vectorbase import cached_get_vectorstore, get_bm25_retriever_from_chunks
 from app.loaders import cached_chunk_pdf
 from app.embeddings import get_embedding_model 
 
@@ -71,7 +70,7 @@ with st.sidebar:
             all_chunks = []
             for path in file_paths:
                 # We use the loader directly here
-                chunks = load_and_chunk_pdf(path)
+                chunks = cached_chunk_pdf(path)
                 all_chunks.extend(chunks)
             st.session_state["all_chunks"] = all_chunks
 
@@ -103,7 +102,8 @@ if query and session_active:
     with st.spinner("Initializing retrieval engine..."):
         namespace = st.session_state["namespace"]
         all_chunks = st.session_state["all_chunks"]
-        vectorstore = get_vectorstore(PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
+        # --- THIS IS THE CORRECTED LINE ---
+        vectorstore = cached_get_vectorstore(PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
         bm25_retriever = get_bm25_retriever_from_chunks(all_chunks)
 
     with st.spinner("🕵️‍♂️ Generating hypothetical document & searching..."):
@@ -165,3 +165,4 @@ if query and session_active:
             st.markdown("These are the top 5 chunks found after advanced retrieval and reranking.")
             for i, doc in enumerate(reranked_docs):
                 st.info(f"**Chunk {i+1}:**\n\n" + doc.page_content)
+        
