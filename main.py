@@ -10,7 +10,7 @@ from itertools import chain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain_groq import ChatGroq
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-from app.embeddings import get_advanced_embeddings
+from app.embeddings import get_advanced_embedding_model
 # Import functions from their respective files
 from app.chain import build_llm_chain
 from app.streamlit import upload_pdfs, save_uploaded_files
