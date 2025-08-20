@@ -1,11 +1,12 @@
+# In main.py
+
 import os
 import uuid
 import streamlit as st
 from itertools import chain
 
 # --- KEY IMPORTS FOR ADVANCED RETRIEVAL ---
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
+# CORRECTED IMPORT - Thank you for finding this!
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain_groq import ChatGroq
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
@@ -18,6 +19,8 @@ from app.utility import (
     cached_get_vectorstore,
     get_bm25_retriever_from_chunks
 )
+# We need the new embedding model from our other file
+from app.embeddings import get_advanced_embedding_model
 
 # ------------------- PAGE CONFIGURATION -------------------
 st.set_page_config(
@@ -31,7 +34,7 @@ st.set_page_config(
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
-GROQ_API_KEY = st.secrets["GROQ_API_KEY"] # Assumes you've added this to secrets
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 UPLOAD_DIR = "uploaded_files"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -44,10 +47,20 @@ def get_reranker():
 def get_hyde_llm(_api_key):
     return ChatGroq(temperature=0, groq_api_key=_api_key, model_name="llama3-8b-8192")
 
+# We now need to initialize the HyDE chain here
+@st.cache_resource
+def get_hyde_embedder(_llm, _embedding_model):
+    return HypotheticalDocumentEmbedder.from_llm(_llm, _embedding_model, "web_search")
+
 reranker = get_reranker()
 hyde_llm = get_hyde_llm(GROQ_API_KEY)
+# Get the same advanced embedding model we used for ingestion
+embedding_model = get_advanced_embedding_model() 
+hyde_embedder = get_hyde_embedder(hyde_llm, embedding_model)
 
-# ------------------- SIDEBAR FOR FILE UPLOADS -------------------
+
+# ------------------- SIDEBAR & INGESTION (No Changes) -------------------
+# ... (your sidebar and file upload logic remains the same) ...
 with st.sidebar:
     st.header("📚 Your Course Material")
     st.markdown("Upload your PDF files here. Once processed, you can ask questions in the main window.")
@@ -70,12 +83,14 @@ with st.sidebar:
             st.session_state["all_chunks"] = all_chunks
 
             from app.vectorbase import store_chunks
+            # Make sure store_chunks is using the same advanced embedding model
             store_chunks(all_chunks, PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
         
         st.success(f"✅ Uploaded {len(uploaded_files)} file(s) successfully!")
         st.rerun()
 
-# ------------------- MAIN PAGE LAYOUT -------------------
+# ------------------- MAIN PAGE LAYOUT (No Changes) -------------------
+# ... (your title, info box, and text input remain the same) ...
 st.title("💻 ExamAI: Chat with your Course Material")
 
 session_active = "namespace" in st.session_state and "all_chunks" in st.session_state
@@ -91,7 +106,7 @@ query = st.text_input(
     disabled=not session_active
 )
 
-# ------------------- QUERY PROCESSING & DISPLAY -------------------
+# ------------------- QUERY PROCESSING & DISPLAY (Updated Logic) -------------------
 if query and session_active:
     
     with st.spinner("Initializing retrieval engine..."):
@@ -100,16 +115,15 @@ if query and session_active:
         vectorstore = cached_get_vectorstore(PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
         bm25_retriever = get_bm25_retriever_from_chunks(all_chunks)
 
-    with st.spinner("🕵️‍♂️ Generating hypothetical answer & searching..."):
-        # --- NEW: HYDE RETRIEVER LOGIC ---
-        hyde_prompt = PromptTemplate(
-            input_variables=["question"],
-            template="Please write a short, concise paragraph that provides a clear answer to the following question.\nQuestion: {question}\nAnswer:"
-        )
-        hyde_chain = LLMChain(llm=hyde_llm, prompt=hyde_prompt)
-        hyde_retriever = HydeRetriever(vectorstore=vectorstore, llm_chain=hyde_chain)
+    with st.spinner("🕵️‍♂️ Generating hypothetical document & searching..."):
+        # --- NEW, CORRECT HYDE LOGIC ---
+        # 1. Use the embedder to generate embeddings for the hypothetical document
+        hyde_embeddings = hyde_embedder.embed_query(query)
         
-        semantic_docs = hyde_retriever.invoke(query)
+        # 2. Use these embeddings to perform a similarity search
+        semantic_docs = vectorstore.similarity_search_by_vector(hyde_embeddings, k=10)
+        
+        # 3. Get keyword docs as before
         keyword_docs = bm25_retriever.invoke(query)
         
         all_initial_docs = list(chain(semantic_docs, keyword_docs))
