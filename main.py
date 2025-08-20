@@ -6,7 +6,7 @@ import streamlit as st
 from itertools import chain
 
 # --- KEY IMPORTS FOR ADVANCED RETRIEVAL ---
-# CORRECTED IMPORT - Thank you for finding this!
+
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain_groq import ChatGroq
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
@@ -19,7 +19,7 @@ from app.utility import (
     cached_get_vectorstore,
     get_bm25_retriever_from_chunks
 )
-# We need the new embedding model from our other file
+
 from app.embeddings import get_advanced_embedding_model
 
 # ------------------- PAGE CONFIGURATION -------------------
@@ -59,8 +59,8 @@ embedding_model = get_advanced_embedding_model()
 hyde_embedder = get_hyde_embedder(hyde_llm, embedding_model)
 
 
-# ------------------- SIDEBAR & INGESTION (No Changes) -------------------
-# ... (your sidebar and file upload logic remains the same) ...
+# ------------------- SIDEBAR & INGESTION -------------------
+
 with st.sidebar:
     st.header("📚 Your Course Material")
     st.markdown("Upload your PDF files here. Once processed, you can ask questions in the main window.")
@@ -83,14 +83,14 @@ with st.sidebar:
             st.session_state["all_chunks"] = all_chunks
 
             from app.vectorbase import store_chunks
-            # Make sure store_chunks is using the same advanced embedding model
+            
             store_chunks(all_chunks, PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
         
         st.success(f"✅ Uploaded {len(uploaded_files)} file(s) successfully!")
         st.rerun()
 
-# ------------------- MAIN PAGE LAYOUT (No Changes) -------------------
-# ... (your title, info box, and text input remain the same) ...
+# ------------------- MAIN PAGE LAYOUT-------------------
+
 st.title("💻 ExamAI: Chat with your Course Material")
 
 session_active = "namespace" in st.session_state and "all_chunks" in st.session_state
@@ -101,12 +101,12 @@ if not session_active:
 st.subheader("...Ask Away...")
 query = st.text_input(
     "What do you want to know?",
-    placeholder="e.g., Compare and contrast top-down and bottom-up design...",
+    placeholder="e.g., Let your query be well detailed...",
     label_visibility="collapsed",
     disabled=not session_active
 )
 
-# ------------------- QUERY PROCESSING & DISPLAY (Updated Logic) -------------------
+# ------------------- QUERY PROCESSING & DISPLAY  -------------------
 if query and session_active:
     
     with st.spinner("Initializing retrieval engine..."):
