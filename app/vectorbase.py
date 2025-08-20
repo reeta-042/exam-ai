@@ -6,7 +6,7 @@ from langchain_community.retrievers import BM25Retriever
 import time
 from app.embeddings import get_embedding_model
 
-# --- This is now the ONLY function for getting a vectorstore ---
+
 @st.cache_resource
 def cached_get_vectorstore(api_key, index_name, namespace: str):
     """
