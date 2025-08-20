@@ -1,3 +1,4 @@
+# In main.py
 import os
 import uuid
 import streamlit as st
@@ -11,13 +12,9 @@ from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 # Import functions from their respective files
 from app.chain import build_llm_chain
 from app.streamlit import upload_pdfs, save_uploaded_files
-from app.utility import (
-    cached_chunk_pdf,
-    cached_get_vectorstore,
-    get_bm25_retriever_from_chunks
-)
-#embedding model 
-from app.embeddings import get_advanced_embedding_model
+from app.vectorbase import get_vectorstore, get_bm25_retriever_from_chunks
+from app.loaders import load_and_chunk_pdf # Assuming this is your loader function
+from app.embeddings import get_embedding_model # Import the single cached model function
 
 # ------------------- PAGE CONFIGURATION -------------------
 st.set_page_config(
@@ -44,20 +41,18 @@ def get_reranker():
 def get_hyde_llm(_api_key):
     return ChatGroq(temperature=0, groq_api_key=_api_key, model_name="llama3-8b-8192")
 
-# We now need to initialize the HyDE chain here
 @st.cache_resource
-def get_hyde_embedder(_llm, _embedding_model):
-    return HypotheticalDocumentEmbedder.from_llm(_llm, _embedding_model, "web_search")
+def get_hyde_embedder(_llm):
+    # Get the embedding model INSIDE this function
+    embedding_model = get_embedding_model()
+    return HypotheticalDocumentEmbedder.from_llm(_llm, embedding_model, "web_search")
 
+# --- INITIALIZE EVERYTHING ---
 reranker = get_reranker()
 hyde_llm = get_hyde_llm(GROQ_API_KEY)
-# Get the same advanced embedding model we used for ingestion
-embedding_model = get_advanced_embedding_model() 
-hyde_embedder = get_hyde_embedder(hyde_llm, embedding_model)
+hyde_embedder = get_hyde_embedder(hyde_llm)
 
-
-# ------------------- SIDEBAR & INGESTION (No Changes) -------------------
-# ... (your sidebar and file upload logic remains the same) ...
+# ------------------- SIDEBAR & INGESTION -------------------
 with st.sidebar:
     st.header("📚 Your Course Material")
     st.markdown("Upload your PDF files here. Once processed, you can ask questions in the main window.")
@@ -75,19 +70,18 @@ with st.sidebar:
             file_paths = save_uploaded_files(uploaded_files)
             all_chunks = []
             for path in file_paths:
-                chunks = cached_chunk_pdf(path)
+                # We use the loader directly here
+                chunks = load_and_chunk_pdf(path)
                 all_chunks.extend(chunks)
             st.session_state["all_chunks"] = all_chunks
 
             from app.vectorbase import store_chunks
-            # Make sure store_chunks is using the same advanced embedding model
             store_chunks(all_chunks, PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
         
         st.success(f"✅ Uploaded {len(uploaded_files)} file(s) successfully!")
         st.rerun()
 
-# ------------------- MAIN PAGE LAYOUT (No Changes) -------------------
-# ... (your title, info box, and text input remain the same) ...
+# ------------------- MAIN PAGE LAYOUT -------------------
 st.title("💻 ExamAI: Chat with your Course Material")
 
 session_active = "namespace" in st.session_state and "all_chunks" in st.session_state
@@ -103,24 +97,18 @@ query = st.text_input(
     disabled=not session_active
 )
 
-# ------------------- QUERY PROCESSING & DISPLAY (Updated Logic) -------------------
+# ------------------- QUERY PROCESSING & DISPLAY -------------------
 if query and session_active:
     
     with st.spinner("Initializing retrieval engine..."):
         namespace = st.session_state["namespace"]
         all_chunks = st.session_state["all_chunks"]
-        vectorstore = cached_get_vectorstore(PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
+        vectorstore = get_vectorstore(PINECONE_API_KEY, PINECONE_INDEX_NAME, namespace)
         bm25_retriever = get_bm25_retriever_from_chunks(all_chunks)
 
     with st.spinner("🕵️‍♂️ Generating hypothetical document & searching..."):
-        # --- NEW, CORRECT HYDE LOGIC ---
-        # 1. Use the embedder to generate embeddings for the hypothetical document
         hyde_embeddings = hyde_embedder.embed_query(query)
-        
-        # 2. Use these embeddings to perform a similarity search
         semantic_docs = vectorstore.similarity_search_by_vector(hyde_embeddings, k=10)
-        
-        # 3. Get keyword docs as before
         keyword_docs = bm25_retriever.invoke(query)
         
         all_initial_docs = list(chain(semantic_docs, keyword_docs))
@@ -137,7 +125,6 @@ if query and session_active:
             scored_docs.sort(key=lambda x: x[0], reverse=True)
             reranked_docs = [doc for score, doc in scored_docs[:5]]
 
-        # --- The rest of the logic remains the same ---
         answer_tab, quiz_tab, context_tab = st.tabs(["💡 Answer", "📝 Quiz", "🔍 Retrieved Context"])
 
         input_data = {
@@ -178,4 +165,3 @@ if query and session_active:
             st.markdown("These are the top 5 chunks found after advanced retrieval and reranking.")
             for i, doc in enumerate(reranked_docs):
                 st.info(f"**Chunk {i+1}:**\n\n" + doc.page_content)
-                
