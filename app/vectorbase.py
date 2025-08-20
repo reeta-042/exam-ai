@@ -4,7 +4,7 @@ from langchain_pinecone import Pinecone as LangChainPinecone
 from langchain_community.retrievers import BM25Retriever
 from langchain.docstore.document import Document
 import time
-from app.embeddings import get_advanced_embedding_model()
+from app.embeddings import get_advanced_embedding_model
 
 
 def store_chunks(chunks, api_key, index_name, namespace: str = ""):
