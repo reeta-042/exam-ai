@@ -1,6 +1,6 @@
 from pinecone import Pinecone  # Official Pinecone SDK (v3+)
 from langchain_pinecone import Pinecone as LangChainPinecone
-from langchain_huggingface import HuggingFaceEmbeddings
+#from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.retrievers import BM25Retriever
 from langchain.docstore.document import Document
 import time
