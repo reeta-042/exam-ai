@@ -20,7 +20,7 @@ from app.utility import (
     get_bm25_retriever_from_chunks
 )
 
-from app.embeddings import get_advanced_embedding_model
+
 
 # ------------------- PAGE CONFIGURATION -------------------
 st.set_page_config(
