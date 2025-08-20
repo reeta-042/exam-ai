@@ -1,48 +1,39 @@
-# Exam-prep.ai
-# 🤖 ExamAI: Your Personal AI Study Assistant
+# 🤖 ExamAI: Advanced AI Study Assistant
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://exam-prepai.streamlit.app/).  👈Check out ExamAI
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://prep-with-ai.streamlit.app/) 👈 Check out ExamAI on streamlit here 
 
-ExamAI is an intelligent study application designed to help students prepare for exams by transforming their course materials into an interactive learning experience. Users can upload their PDF documents, and the application will leverage a sophisticated AI pipeline to answer questions, generate follow-up queries, and create quizzes based on the provided content.
+ExamAI is an intelligent study application that transforms static course materials into a dynamic and interactive learning experience. This project was built to solve a common, difficult problem: enabling students to efficiently study from complex or poorly formatted academic documents. By leveraging a sophisticated AI pipeline, students can get accurate answers, generate follow-up questions, and test their knowledge with quizzes, all based on their own notes.
 
-The aim of this project is for students to be able to prepare extensively for their exams, cover their course materials even within a short period of time, and also understand the material properly with the interactive learning methods provided.
+The core mission of this app is to provide a powerful tool for students to prepare extensively for their exams, cover their course materials even within a short period, and deeply understand the content through AI-driven interaction.
 
-## Chosen Tech Stack
+## Chosen Tech Stack & Architecture
 
-The application is built using a modern, powerful stack for AI and web development:
+This application is built on a modern, powerful, and carefully selected stack designed for high-performance AI and a great user experience. The final architecture is the result of significant research and debugging to overcome common RAG (Retrieval-Augmented Generation) pitfalls.
 
-*   **Backend & AI Logic:**
-    *   **Python:** The core programming language.
-    *   **LangChain:** The primary framework for orchestrating the AI pipeline, including data loading, chunking, retrieval, and agentic chains.
-    *   **Google Gemini:** The Large Language Model (LLM) used for generating answers, follow-up questions, and quizzes.
-    *   **Pinecone:** A high-performance vector database used to store document embeddings for efficient semantic search.
-    *   **Sentence-Transformers:** Used to create dense vector embeddings of the text chunks.
-*   **Frontend:**
-    *   **Streamlit:** A Python framework for rapidly building and deploying interactive web applications.
-  
-  *   **Key Data Processing Libraries:**
-    *   **`PyMuPDF`:** The core library that powers the `PyMuPDFLoader`. It is used for robustly parsing PDF documents. It is significantly more effective than standard loaders at accurately extracting text and preserving the document's structure, which is critical for creating high-quality, relevant chunks.
-    
+*   **Backend & AI Logic:** **Python**
+*   **AI Orchestration:** **LangChain** is the primary framework used to structure the entire RAG pipeline, from data ingestion to final answer generation.
+*   **Frontend:** **Streamlit** provides the interactive web application interface.
+*   **Vector Database:** **Pinecone** is used as a high-performance, cloud-based vector store for efficient semantic search.
 
 ### Core Technical Decisions Explained
 
-#### PDF Loader: Why `PyMuPDFLoader`?
+The journey to a working, relevant RAG system required overcoming several major challenges. The solutions chosen represent a robust and advanced approach to document intelligence.
 
-During development, it became clear that the default PDF text extraction library was insufficient for handling academic documents, often leading to poor quality text and irrelevant search results. While more advanced libraries like `unstructured` offer powerful layout analysis, they also introduce significant system-level dependencies that are complex to manage in a cloud deployment environment.
+#### 1. The Text Extraction Problem: `PyMuPDFLoader`
+Initial development revealed that many academic PDFs, especially those converted from other formats, contain "garbled text" (e.g., missing spaces) when parsed with standard tools. After testing multiple loaders (`Unstructured`, etc.), **`PyMuPDFLoader`** was chosen for its optimal balance of speed, reliability, and lightweight dependencies, providing a clean baseline of text for the rest of the pipeline.
 
-**`PyMuPDFLoader`** was chosen as the optimal solution, providing a crucial balance between performance and reliability. It is significantly better at extracting clean text and preserving document structure than the standard loaders, without requiring complex system configurations. This ensures the application remains robust, easy to deploy, and effective for the vast majority of PDF documents.
+#### 2. The Relevance Problem: A Multi-Layered Retrieval Strategy
+Simply searching for text is not enough to get relevant results. This application uses a sophisticated, multi-stage retrieval process to find the most accurate information:
 
+*   **Advanced Embedding Model (`BAAI/bge-large-en-v1.5`):** Standard embedding models failed to understand the nuances of the (sometimes garbled) academic text. We upgraded to a state-of-the-art, open-source model. This required rebuilding the Pinecone index with a larger vector dimension (`1024`), a critical step that dramatically improved the base semantic search quality.
 
-### Chunking Strategy: `chunk_size=1000`, `chunk_overlap=200`
+*   **Hypothetical Document Embeddings (HyDE):** To overcome query ambiguity and API costs from previous methods (`MultiQueryRetriever`), we implemented HyDE. This technique uses a fast, external LLM (**Groq Llama3-8b**) to generate a hypothetical, ideal answer to the user's query *first*. The embedding of this rich, hypothetical answer is then used for the semantic search, resulting in far more relevant document retrieval at virtually no cost.
 
-The quality of retrieval is highly dependent on how the source material is chunked. The chosen strategy prioritizes creating chunks with **rich contextual information** while ensuring **semantic continuity**.
+*   **Keyword Search (`BM25Retriever`):** To complement the semantic search, a traditional keyword search is run in parallel. This ensures that documents containing exact, important terms are not missed.
 
-*   **`chunk_size=1000`:** This larger chunk size is deliberately chosen to provide the language model with more comprehensive context for each retrieved passage. Instead of just getting a single sentence or a small fact, the model receives a fuller paragraph or section. This is particularly effective for answering broader, more complex questions that require understanding the relationships between different ideas within the text. It allows for more nuanced and detailed responses.
+*   **Cross-Encoder Reranking (`ms-marco-MiniLM-L-6-v2`):** After the hybrid search (HyDE + BM25) gathers a broad set of candidate documents, a final, more powerful Cross-Encoder model meticulously re-scores the candidates against the original user query. This crucial final step filters out the noise and delivers the top 5 most semantically relevant chunks to the language model.
 
-*   **`chunk_overlap=200`:** A significant overlap of 20% is crucial for maintaining the integrity of the document's ideas. When the splitter is forced to break a paragraph or a long sentence, this large overlap ensures that the full context is preserved across adjacent chunks. This acts as a robust "safety net," preventing the loss of meaning that can occur at chunk boundaries.
-
-This combination balances the need for rich context with the importance of continuity, optimizing the chunks for a powerful retrieval system that can handle both specific and broad queries.
-
+This multi-layered approach ensures that the context provided to the final LLM is as accurate and relevant as possible.
 
 ## Setup and Installation
 
@@ -51,13 +42,18 @@ Follow these steps to set up and run the project locally.
 1.  **Clone the Repository:**
     ```bash
     git clone <your-repository-url>
-    cd <your-repository-directory>
+    cd exam-ai
     ```
 
 2.  **Create a Virtual Environment:**
     ```bash
+    # On macOS/Linux
+    python3 -m venv venv
+    source venv/bin/activate
+
+    # On Windows
     python -m venv venv
-    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    .\venv\Scripts\activate
     ```
 
 3.  **Install Dependencies:**
@@ -65,17 +61,24 @@ Follow these steps to set up and run the project locally.
     ```bash
     pip install -r requirements.txt
     ```
-    
 
 4.  **Set Up API Keys:**
-    The application requires API keys for Google Gemini and Pinecone. Store these securely. The app is configured to use Streamlit Secrets. Create a file at `.streamlit/secrets.toml` and add your keys:
+    The application requires API keys for Google Gemini, Pinecone, and Groq. Store these securely using Streamlit Secrets. Create a file at `.streamlit/secrets.toml` and add your keys:
     ```toml
     GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"
     PINECONE_API_KEY = "YOUR_PINECONE_API_KEY"
     PINECONE_INDEX_NAME = "your-pinecone-index-name"
+    GROQ_API_KEY = "YOUR_GROQ_API_KEY"
     ```
 
-5.  **Run the Application:**
+5.  **Set Up Pinecone Index:**
+    Before the first run, you must create an index in Pinecone with the correct dimensions for the embedding model.
+    *   Go to your Pinecone dashboard.
+    *   Create a new index with the same name as in your secrets file.
+    *   **Dimensions:** `1024`
+    *   **Metric:** `Cosine`
+
+6.  **Run the Application:**
     ```bash
     streamlit run main.py
     ```
@@ -86,36 +89,22 @@ Follow these steps to set up and run the project locally.
 The user workflow is simple and intuitive:
 
 1.  The user uploads a PDF document using the sidebar.
-2.  The application processes and indexes the document.
+2.  The application processes and indexes the document, which involves chunking, embedding, and storing in Pinecone.
 3.  The user asks a question in the main input area.
 
 **Example Query:**
-> "What is the difference between a primary key and a foreign key?"
+> "What is the difference between a primary key and a composite key?"
 
 **Expected Output Format:**
 The application will display the results in a clean, tabbed interface:
 
 *   **💡 Answer Tab:**
-    *   **Main Answer:** A direct, comprehensive answer generated by the AI based on the retrieved context from the document.
-    *   **🗨️ Follow-up Questions:** A list of suggested questions to help the user explore the topic further.
+    *   **Main Answer:** A direct, comprehensive answer generated by the Gemini LLM based on the retrieved context.
+    *   **Follow-up Questions:** A list of suggested questions to help the user explore the topic further.
 
 *   **📝 Quiz Tab:**
     *   A multiple-choice quiz is generated based on the topic. Each question is presented clearly, with the answer hidden in an expandable section to encourage active recall.
-    ```
-    **Question 1:** Which type of key is used to uniquely identify a record in a table?
-    - A. Foreign Key
-    - B. Super Key
-    - C. Primary Key
-    
-    [Show Answer]  <- This is an expandable button
-    ```
 
 *   **🔍 Retrieved Context Tab:**
-    *   This tab shows the raw text chunks that were retrieved from the document and used as the context for generating the answer, providing transparency into the AI's process.
-
-## Limitations and Known Issues
-
-*   **Document Quality Dependency:** While `PyMuPDF` is powerful, the application's performance is still highly dependent on the quality of the source PDF. Extremely degraded, scanned, or poorly formatted documents may still yield suboptimal results.
-*   **Computational Cost:** The initial processing of a document, especially with `PyMuPDF`, can be computationally intensive and may take time, particularly for large documents.
-*   **Hallucination Risk:** Like all LLM-based systems, there is a small but inherent risk of the AI generating plausible but incorrect information (hallucinating), especially if the context it receives is ambiguous. The "Retrieved Context" tab is provided to help users verify the source of the information.
+    *   This tab displays the top 5 document chunks that were found by the advanced retrieval pipeline (HyDE + BM25 + Reranker). This provides transparency and allows the user to verify the source of the AI's answer.
 
