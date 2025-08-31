@@ -5,7 +5,7 @@ from itertools import chain
 
 # --- KEY IMPORTS FOR ADVANCED RETRIEVAL ---
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
-from langchain_groq import ChatGroq
+from langchain_groq import ChatGoogleGenerativeAI 
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
 # Import functions from their respective files
@@ -27,7 +27,7 @@ st.set_page_config(
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
-GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+#GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 UPLOAD_DIR = "uploaded_files"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -37,8 +37,11 @@ def get_reranker():
     return HuggingFaceCrossEncoder(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
 
 @st.cache_resource
-def get_hyde_llm(_api_key):
-    return ChatGroq(temperature=0, groq_api_key=_api_key, model_name="llama3-8b-8192")
+def get_hyde_llm(api_key):
+    return ChatGoogleGenerativeAI(
+        temperature =0
+        model="gemini-2.5-pro",
+        api_key=api_key)
 
 @st.cache_resource
 def get_hyde_embedder(_llm):
@@ -48,7 +51,7 @@ def get_hyde_embedder(_llm):
 
 # --- INITIALIZE EVERYTHING ---
 reranker = get_reranker()
-hyde_llm = get_hyde_llm(GROQ_API_KEY)
+hyde_llm = get_hyde_llm(GOOGLE_API_KEY)
 hyde_embedder = get_hyde_embedder(hyde_llm)
 
 # ------------------- SIDEBAR & INGESTION -------------------
