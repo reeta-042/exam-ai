@@ -5,7 +5,7 @@ from itertools import chain
 
 # --- KEY IMPORTS FOR ADVANCED RETRIEVAL ---
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
-from langchain_groq import ChatGoogleGenerativeAI 
+from langchain_google_genai import ChatGoogleGenerativeAI 
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
 # Import functions from their respective files
@@ -27,7 +27,6 @@ st.set_page_config(
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
 PINECONE_INDEX_NAME = st.secrets["PINECONE_INDEX_NAME"]
-#GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 UPLOAD_DIR = "uploaded_files"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
