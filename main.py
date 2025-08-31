@@ -38,7 +38,7 @@ def get_reranker():
 @st.cache_resource
 def get_hyde_llm(api_key):
     return ChatGoogleGenerativeAI(
-        temperature =0
+        temperature = 0,
         model="gemini-2.5-pro",
         api_key=api_key)
 
